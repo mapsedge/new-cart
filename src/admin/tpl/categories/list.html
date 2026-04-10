@@ -1,0 +1,112 @@
+{extends file="../layout.html"}
+
+{block name="title"}Categories — {$site_name|escape}{/block}
+
+{block name="head"}
+<link rel="stylesheet" href="/admin/css/categories.css">
+{/block}
+
+{block name="content"}
+
+<div class="nc-toolbar">
+	<button class="btn btn-primary" id="btn-add-category">+ Add Category</button>
+	<button class="btn btn-danger" id="btn-bulk-delete" disabled>Delete Selected</button>
+</div>
+
+<table class="nc-table" id="cat-table">
+	<thead>
+		<tr>
+			<th class="col-drag"></th>
+			<th>Category Name</th>
+			<th>Parent</th>
+			<th class="col-status">Status</th>
+			<th class="col-toggle">Featured</th>
+			<th class="col-browse"></th>
+			<th class="col-delete"></th>
+			<th class="col-check"><input type="checkbox" id="chk-all" title="Select all"></th>
+		</tr>
+	</thead>
+	<tbody id="cat-tbody">
+		<tr id="cat-empty-row">
+			<td colspan="8">
+				<div class="nc-empty">
+					<p>No categories yet.</p>
+					<button class="btn btn-primary" id="btn-add-first">Add your first category</button>
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<div id="drawer-overlay"></div>
+
+<me-drawer id="cat-drawer">
+	<drawer-head>
+		<h2 id="drawer-title">Add Category</h2>
+		<button class="drawer-close" id="drawer-close">&times;</button>
+	</drawer-head>
+	<drawer-content>
+		<input type="hidden" id="cat-id" value="">
+
+		<div class="df">
+			<label for="cat-name">Category Name <span class="field-required">*</span></label>
+			<input type="text" id="cat-name" maxlength="255" required>
+		</div>
+
+		<div class="df">
+			<label for="cat-parent">Parent Category</label>
+			<select id="cat-parent">
+				<option value="0">&mdash; Top Level &mdash;</option>
+			</select>
+		</div>
+
+		<div class="df">
+			<label for="cat-seo">Page Title (SEO)</label>
+			<input type="text" id="cat-seo" maxlength="300" placeholder="Defaults to category name if left blank">
+		</div>
+
+		<div class="df">
+			<label for="cat-html-long">Description</label>
+			<textarea id="cat-html-long" rows="6"></textarea>
+		</div>
+
+		<div class="df-row">
+			<div class="df">
+				<label>Status</label>
+				<roller-select id="cat-status" name="cat-status" value="1">
+					<rs-item value="0">Not Active</rs-item>
+					<rs-item value="1">Active</rs-item>
+					<rs-item value="2">Browse Only</rs-item>
+				</roller-select>
+			</div>
+			<div class="df-toggle">
+				<ios-toggle id="cat-featured" name="cat-featured" size="sm"></ios-toggle>
+				<label for="cat-featured">Featured</label>
+			</div>
+		</div>
+
+	</drawer-content>
+	<drawer-foot>
+		<button class="btn btn-secondary" id="btn-drawer-cancel">Cancel</button>
+		<button class="btn btn-primary" id="btn-drawer-save">Save Category</button>
+	</drawer-foot>
+</me-drawer>
+
+{/block}
+
+{block name="scripts"}
+<script>
+var NC = {
+	adminUrl:       '{$url_admin}',
+	rootUrl:        '{$url_root}',
+	siteName:       '{$site_name|escape:"javascript"}',
+	incompleteCats: {$incomplete_cat_ids|json_encode}
+};
+</script>
+<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="/js/vendor/roller-select.js"></script>
+<script src="/js/vendor/ios-toggle.js"></script>
+<script src="/js/vendor/delete-in-place.js"></script>
+<script src="/admin/js/categories.js"></script>
+{/block}

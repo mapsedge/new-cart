@@ -1,0 +1,66 @@
+{extends file="../layout.html"}
+
+{block name="title"}Plugins — {$site_name|escape}{/block}
+
+{block name="head"}
+<link rel="stylesheet" href="/admin/css/plugins.css">
+{/block}
+
+{block name="content"}
+
+<div class="plugin-notice" id="plugin-notice">
+	<span class="notice-icon">&#9888;</span>
+	<div>
+		<strong>Back up before installing.</strong>
+		Always back up your database and files before installing or removing a plugin.
+		If something goes wrong, a backup is the only way to fully recover.
+		<!-- <a href="{$url_admin}?route=setup#backup">Go to backup</a> -->
+	</div>
+	<button class="notice-dismiss" id="notice-dismiss" title="Dismiss">&times;</button>
+</div>
+
+<div class="plugin-upload" id="plugin-upload-zone">
+	<div class="upload-icon">&#128229;</div>
+	<p>Drop a plugin .zip here, or click to browse</p>
+	<p class="upload-hint">Plugins are .zip files containing a plugin.xml manifest</p>
+</div>
+
+<input type="file" id="plugin-file-input" accept=".zip" style="display:none">
+
+<div class="upload-progress" id="upload-progress">
+	<span class="spinner"></span>
+	<span id="upload-progress-msg">Installing…</span>
+</div>
+
+<table class="nc-table">
+	<thead>
+		<tr>
+			<th>Plugin</th>
+			<th>Author</th>
+			<th>Link</th>
+			<th class="col-toggle">Enabled</th>
+			<th class="col-delete"></th>
+		</tr>
+	</thead>
+	<tbody id="plugin-tbody">
+		<tr>
+			<td colspan="5"><div class="nc-empty">No plugins installed.</div></td>
+		</tr>
+	</tbody>
+</table>
+
+{/block}
+
+{block name="scripts"}
+<script>
+var NC = {
+	adminUrl: '{$url_admin}',
+	rootUrl:  '{$url_root}'
+};
+</script>
+<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="/js/vendor/ios-toggle.js"></script>
+<script src="/js/vendor/delete-in-place.js"></script>
+<script src="/admin/js/plugins.js"></script>
+{/block}

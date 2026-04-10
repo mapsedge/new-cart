@@ -1,0 +1,55 @@
+/**
+ * new-cart admin — CSS custom properties
+ * All colors and key sizes defined here. Never repeat a value elsewhere.
+ */
+
+:root {
+	/* ── Brand ── */
+	--nc-primary:        #2563eb;   /* buttons, links, active states */
+	--nc-primary-hover:  #1d4ed8;
+	--nc-success:        #16a34a;
+	--nc-danger:         #dc2626;
+	--nc-warning:        #d97706;
+
+	/* ── Text ── */
+	--nc-text:           #1a1a1a;   /* primary body text */
+	--nc-text-secondary: #444444;   /* secondary / hint text */
+	--nc-text-dim:       #555555;   /* placeholder, muted */
+
+	/* ── Backgrounds ── */
+	--nc-bg:             #ffffff;
+	--nc-bg-alt:         #f8f9fa;   /* table headers, sidebar sections */
+	--nc-bg-page:        #f0f2f5;   /* page background */
+
+	/* ── Borders ── */
+	--nc-border:         #9ca3af;   /* standard border */
+	--nc-border-light:   #e5e7eb;   /* subtle dividers */
+	--nc-border-focus:   #2563eb;   /* focus ring color */
+
+	/* ── Toggle ── */
+	--nc-track-off:      #c7c7cc;   /* ios-toggle off state track */
+	--nc-thumb:          #00CF00;   /* ios-toggle thumb */
+	/* on state uses --nc-primary */
+
+	/* ── Sidebar ── */
+	--nc-sidebar-bg:     #1e2a38;
+	--nc-sidebar-hover:  #2c3e50;
+	--nc-sidebar-active: #2563eb;   /* same as --nc-primary */
+	--nc-sidebar-text:   #c8d0da;
+	--nc-sidebar-dim:    #7a8a9a;
+
+	/* ── Topbar ── */
+	--nc-topbar-bg:      #2c3e50;
+	--nc-topbar-text:    #ffffff;
+
+	/* ── Sizing ── */
+	--nc-sidebar-w:           220px;
+	--nc-sidebar-w-collapsed:  48px;
+	--nc-topbar-h:             52px;
+	--nc-radius:               .375rem;
+	--nc-radius-sm:            .25rem;
+	--nc-radius-lg:            .5rem;
+
+	/* ── Font ── */
+	--nc-font: Helvetica, 'Open Sans', sans-serif;
+}

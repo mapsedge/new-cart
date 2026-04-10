@@ -1,0 +1,173 @@
+{extends file="../layout.html"}
+
+{block name="title"}Products — {$site_name|escape}{/block}
+
+{block name="head"}
+<link rel="stylesheet" href="/admin/css/products.css">
+{/block}
+
+{block name="content"}
+
+<div class="nc-toolbar">
+	<button class="btn btn-primary" id="btn-add-product">+ Add Product</button>
+	<button class="btn btn-danger"  id="btn-bulk-delete" disabled>Delete Selected</button>
+</div>
+
+<table class="nc-table" id="prod-table">
+	<thead>
+		<tr>
+			<th class="col-drag"></th>
+			<th>Product</th>
+			<th>Categories</th>
+			<th class="col-price">Price / List</th>
+			<th class="col-stock">Stock</th>
+			<th class="col-active">Active</th>
+			<th class="col-toggle">Featured</th>
+			<th class="col-delete"></th>
+			<th class="col-check"><input type="checkbox" id="chk-all" title="Select all"></th>
+		</tr>
+	</thead>
+	<tbody id="prod-tbody">
+		<tr id="prod-empty-row">
+			<td colspan="9">
+				<div class="nc-empty">
+					<p>No products yet.</p>
+					<button class="btn btn-primary" id="btn-add-first">Add your first product</button>
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<div id="drawer-overlay"></div>
+
+<me-drawer id="prod-drawer">
+	<drawer-head>
+		<h2 id="drawer-title">Add Product</h2>
+		<button class="drawer-close" id="drawer-close">&times;</button>
+	</drawer-head>
+
+	<drawer-content>
+		<input type="hidden" id="prod-id" value="">
+
+		<div class="drawer-tabs">
+			<button class="drawer-tab active" data-panel="details">Details</button>
+			<button class="drawer-tab" data-panel="images">Images</button>
+			<button class="drawer-tab" data-panel="options">Options</button>
+		</div>
+
+		{* ── Details tab ── *}
+		<div class="drawer-tab-panel active" id="panel-details">
+
+			<div class="df">
+				<label for="prod-name">Product Name <span class="field-required">*</span></label>
+				<input type="text" id="prod-name" maxlength="255" required>
+			</div>
+
+			<div class="df-row">
+				<div class="df">
+					<label for="prod-sku">SKU</label>
+					<input type="text" id="prod-sku" maxlength="128" data-uppercase>
+				</div>
+				<div class="df">
+					<label for="prod-price">Price <span class="field-required">*</span></label>
+					<input type="number" id="prod-price" min="0" step="0.01" required>
+				</div>
+				<div class="df">
+					<label for="prod-list-price">List Price</label>
+					<input type="number" id="prod-list-price" min="0" step="0.01">
+					<div class="hint">Shown with "You save X%" when higher than price</div>
+				</div>
+			</div>
+
+			<div class="df-row">
+				<div class="df">
+					<label for="prod-stock">Stock</label>
+					<input type="number" id="prod-stock" min="0" step="1" value="0">
+				</div>
+			</div>
+
+			<div class="df-section">Categories</div>
+
+			<div class="df">
+				<div class="cat-list" id="prod-cat-list">
+					<span style="color:var(--nc-text-dim);font-size:.83rem">Loading…</span>
+				</div>
+				<div class="quick-add-row">
+					<input type="text" id="quick-cat-name" placeholder="Add new category…" maxlength="255">
+					<button type="button" class="btn-icon" id="btn-quick-add-cat" title="Add category">+</button>
+				</div>
+			</div>
+
+			<div class="df-section">Description</div>
+
+			<div class="df">
+				<label for="prod-desc">Short Description</label>
+				<textarea id="prod-desc" rows="2"></textarea>
+			</div>
+
+			<div class="df">
+				<label for="prod-desc-long">Full Description</label>
+				<textarea id="prod-desc-long" rows="4"></textarea>
+			</div>
+
+			<div class="df-section">Options</div>
+
+			<div class="df-row">
+				<div class="df-toggle">
+					<ios-toggle id="prod-active" name="prod-active" size="sm" checked></ios-toggle>
+					<label for="prod-active">Active</label>
+				</div>
+				<div class="df-toggle">
+					<ios-toggle id="prod-featured" name="prod-featured" size="sm"></ios-toggle>
+					<label for="prod-featured">Featured</label>
+				</div>
+				<div class="df-toggle">
+					<ios-toggle id="prod-free-ship" name="prod-free-ship" size="sm"></ios-toggle>
+					<label for="prod-free-ship">Free Shipping</label>
+				</div>
+			</div>
+
+		</div>{* /panel-details *}
+
+		{* ── Images tab ── *}
+		<div class="drawer-tab-panel" id="panel-images">
+			<div class="img-upload-zone" id="img-drop-zone">
+				<div>&#128247; Drop images here or click to browse</div>
+				<div style="font-size:.78rem;margin-top:.3rem">JPG, PNG or WebP. First image becomes primary.</div>
+			</div>
+			<input type="file" id="img-file-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none">
+			<div class="img-grid" id="img-grid"></div>
+			<p class="hint" style="margin-top:.65rem">Click an image to set it as primary. Drag to reorder.</p>
+		</div>
+
+		{* ── Options tab ── *}
+		<div class="drawer-tab-panel" id="panel-options">
+			<p style="color:var(--nc-text-dim);font-size:.88rem;padding:.5rem 0">
+				Option groups will appear here once Options are configured.
+			</p>
+		</div>
+
+	</drawer-content>
+
+	<drawer-foot>
+		<button class="btn btn-secondary" id="btn-drawer-cancel">Cancel</button>
+		<button class="btn btn-primary"   id="btn-drawer-save">Save Product</button>
+	</drawer-foot>
+</me-drawer>
+
+{/block}
+
+{block name="scripts"}
+<script>
+var NC = {
+	adminUrl: '{$url_admin}',
+	rootUrl:  '{$url_root}'
+};
+</script>
+<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="/js/vendor/ios-toggle.js"></script>
+<script src="/js/vendor/delete-in-place.js"></script>
+<script src="/admin/js/products.js"></script>
+{/block}

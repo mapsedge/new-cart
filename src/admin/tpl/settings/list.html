@@ -1,0 +1,374 @@
+{extends file="../layout.html"}
+
+{block name="title"}Setup & Utilities — {$site_name|escape}{/block}
+
+{block name="head"}
+<link rel="stylesheet" href="/admin/css/settings.css">
+{/block}
+
+{block name="content"}
+
+{* ── Sticky save bar ── *}
+<div class="settings-save-bar">
+	<button class="btn btn-primary" id="btn-save-all">Save Settings</button>
+	<span id="save-status"></span>
+</div>
+
+{* ── Tabs ── *}
+<div class="settings-tabs">
+	<button class="settings-tab active" data-tab="store">Store</button>
+	<button class="settings-tab" data-tab="local">Local</button>
+	<button class="settings-tab" data-tab="mail">Mail</button>
+	<button class="settings-tab" data-tab="server">Server</button>
+	<button class="settings-tab" data-tab="users">Users</button>
+	<button class="settings-tab" data-tab="errors">Error Log</button>
+</div>
+
+{* ── Store tab ── *}
+<div class="tab-panel active" id="tab-store">
+	<div class="card-grid">
+
+		<div class="settings-card">
+			<div class="card-head">Store Details</div>
+			<div class="card-body">
+				<div class="df">
+					<label for="s_site_name">Store Name <span class="field-required">*</span></label>
+					<input type="text" id="s_site_name" maxlength="255" required>
+				</div>
+				<div class="df-row">
+					<div class="df">
+						<label for="s_site_email">Store Email</label>
+						<input type="email" id="s_site_email">
+					</div>
+					<div class="df narrow">
+						<label for="s_site_currency">Currency</label>
+						<input type="text" id="s_site_currency" maxlength="8">
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="settings-card">
+			<div class="card-head">SEO Defaults</div>
+			<div class="card-body">
+				<p class="section-hint">Used when no specific values are set on a page or category.</p>
+				<div class="df">
+					<label for="s_seo_title_default">Default Page Title</label>
+					<input type="text" id="s_seo_title_default" maxlength="300">
+				</div>
+				<div class="df">
+					<label for="s_seo_description_default">Default Meta Description</label>
+					<textarea id="s_seo_description_default" rows="2" maxlength="500"></textarea>
+				</div>
+				<div class="df">
+					<label for="s_seo_keywords_default">Default Keywords</label>
+					<input type="text" id="s_seo_keywords_default" maxlength="500">
+					<div class="hint">Comma separated</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="settings-card">
+			<div class="card-head">Branding</div>
+			<div class="card-body">
+				<div class="df">
+					<label>Store Logo</label>
+					<div class="img-upload-row">
+						<img id="preview-logo" class="img-preview" alt="Logo">
+						<div>
+							<button type="button" class="img-upload-btn" id="btn-upload-logo">Choose Image…</button>
+							<input type="file" id="input-logo" accept="image/jpeg,image/png,image/webp" style="display:none">
+							<div class="hint">JPG, PNG or WebP.</div>
+						</div>
+					</div>
+				</div>
+				<div class="df">
+					<label>Favicon</label>
+					<div class="img-upload-row">
+						<img id="preview-favicon" class="img-preview" alt="Favicon">
+						<div>
+							<button type="button" class="img-upload-btn" id="btn-upload-favicon">Choose Image…</button>
+							<input type="file" id="input-favicon" accept="image/jpeg,image/png,image/webp" style="display:none">
+							<div class="hint">JPG, PNG or WebP. Displayed at 32×32.</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+{* ── Local tab ── *}
+<div class="tab-panel" id="tab-local">
+	<div class="card-grid">
+
+		<div class="settings-card">
+			<div class="card-head">Contact</div>
+			<div class="card-body">
+				<div class="df">
+					<label for="s_address">Address</label>
+					<textarea id="s_address" rows="3"></textarea>
+				</div>
+				<div class="df">
+					<label for="s_phone">Phone</label>
+					<input type="tel" id="s_phone" maxlength="17" placeholder="1+111-222-3333" data-mask="phone">
+				</div>
+			</div>
+		</div>
+
+		<div class="settings-card">
+			<div class="card-head">Regional</div>
+			<div class="card-body">
+				<div class="df">
+					<label for="s_timezone">Timezone</label>
+					<select id="s_timezone">
+						<option value="America/New_York">Eastern (UTC-5)</option>
+						<option value="America/Chicago">Central (UTC-6)</option>
+						<option value="America/Denver">Mountain (UTC-7)</option>
+						<option value="America/Los_Angeles">Pacific (UTC-8)</option>
+						<option value="America/Anchorage">Alaska (UTC-9)</option>
+						<option value="Pacific/Honolulu">Hawaii (UTC-10)</option>
+						<option value="UTC">UTC</option>
+					</select>
+				</div>
+				<div class="df">
+					<label for="s_date_format">Date Format</label>
+					<select id="s_date_format">
+						<option value="m/d/Y">MM/DD/YYYY</option>
+						<option value="d/m/Y">DD/MM/YYYY</option>
+						<option value="Y-m-d">YYYY-MM-DD</option>
+					</select>
+				</div>
+				<div class="df">
+					<label for="s_currency_position">Currency Symbol Position</label>
+					<select id="s_currency_position">
+						<option value="before">Before amount ($10.00)</option>
+						<option value="after">After amount (10.00$)</option>
+					</select>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+{* ── Mail tab ── *}
+<div class="tab-panel" id="tab-mail">
+	<div class="card-grid">
+
+		<div class="settings-card">
+			<div class="card-head">SMTP</div>
+			<div class="card-body">
+				<div class="df-row">
+					<div class="df">
+						<label for="s_smtp_host">Hostname</label>
+						<input type="text" id="s_smtp_host" maxlength="255" placeholder="smtp.example.com">
+					</div>
+					<div class="df narrow">
+						<label for="s_smtp_port">Port</label>
+						<input type="number" id="s_smtp_port" min="1" max="65535" placeholder="587">
+					</div>
+				</div>
+				<div class="df">
+					<label for="s_smtp_user">Username</label>
+					<input type="text" id="s_smtp_user" maxlength="255" autocomplete="off">
+				</div>
+				<div class="df">
+					<label for="s_smtp_pass">Password</label>
+					<input type="password" id="s_smtp_pass" autocomplete="new-password">
+				</div>
+			</div>
+		</div>
+
+		<div class="settings-card">
+			<div class="card-head">Mail Alerts</div>
+			<div class="card-body">
+				<div class="df">
+					<label for="s_mail_alert">Alert Email</label>
+					<input type="email" id="s_mail_alert" maxlength="255" placeholder="alerts@example.com">
+					<div class="hint">New orders and admin notifications are sent here.</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+{* ── Server tab ── *}
+<div class="tab-panel" id="tab-server">
+	<div class="card-grid">
+
+		<div class="settings-card">
+			<div class="card-head">General</div>
+			<div class="card-body">
+				<div class="df-toggle">
+					<ios-toggle id="s_maintenance_mode" name="s_maintenance_mode" size="sm"></ios-toggle>
+					<label for="s_maintenance_mode">Maintenance Mode</label>
+				</div>
+				<div class="df-toggle">
+					<ios-toggle id="s_use_seo_urls" name="s_use_seo_urls" size="sm" checked></ios-toggle>
+					<label for="s_use_seo_urls">Use SEO URLs</label>
+				</div>
+				<div class="df">
+					<label for="s_admin_path">Admin URL Path</label>
+					<input type="text" id="s_admin_path" maxlength="64">
+					<div class="hint">Change takes effect on next login.</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="settings-card">
+			<div class="card-head">Security</div>
+			<div class="card-body">
+				<div class="df">
+					<label for="s_pw_min_length">Minimum Password Length</label>
+					<input type="number" id="s_pw_min_length" min="6" max="128" value="8">
+				</div>
+				<div class="df-toggle">
+					<ios-toggle id="s_pw_require_upper" name="s_pw_require_upper" size="sm"></ios-toggle>
+					<label for="s_pw_require_upper">Require uppercase letter</label>
+				</div>
+				<div class="df-toggle">
+					<ios-toggle id="s_pw_require_number" name="s_pw_require_number" size="sm"></ios-toggle>
+					<label for="s_pw_require_number">Require number</label>
+				</div>
+				<div class="df-toggle">
+					<ios-toggle id="s_pw_require_symbol" name="s_pw_require_symbol" size="sm"></ios-toggle>
+					<label for="s_pw_require_symbol">Require symbol</label>
+				</div>
+			</div>
+		</div>
+
+		<div class="settings-card">
+			<div class="card-head">Error Handling</div>
+			<div class="card-body">
+				<div class="df-toggle">
+					<ios-toggle id="s_display_errors" name="s_display_errors" size="sm"></ios-toggle>
+					<label for="s_display_errors">Display Errors</label>
+				</div>
+				<div class="df-toggle">
+					<ios-toggle id="s_log_errors" name="s_log_errors" size="sm" checked></ios-toggle>
+					<label for="s_log_errors">Log Errors</label>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+{* ── Users tab ── *}
+<div class="tab-panel" id="tab-users">
+	<div class="nc-toolbar">
+		<button class="btn btn-primary" id="btn-add-user">+ Add User</button>
+	</div>
+	<div class="settings-card full-width">
+		<div class="card-body" style="padding:0">
+			<table class="nc-table">
+				<thead>
+					<tr>
+						<th>User</th>
+						<th>Email</th>
+						<th>Access Level</th>
+						<th class="col-toggle">Active</th>
+						<th class="delete-col"></th>
+					</tr>
+				</thead>
+				<tbody id="user-tbody">
+					<tr><td colspan="5"><div class="nc-empty">Loading…</div></td></tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+{* ── Error log tab ── *}
+<div class="tab-panel" id="tab-errors">
+	<div class="settings-card full-width">
+		<div class="card-head">Error Log</div>
+		<div class="card-body">
+			<textarea id="error-log" readonly placeholder="No errors logged."></textarea>
+			<div class="log-toolbar">
+				<button class="btn btn-secondary" id="btn-download-log">&#11015; Download</button>
+				<button class="btn btn-danger"    id="btn-clear-log">Clear Log</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+{* ── Overlay ── *}
+<div id="drawer-overlay"></div>
+
+{* ── User drawer ── *}
+<me-drawer id="user-drawer">
+	<drawer-head>
+		<h2 id="drawer-title">Add User</h2>
+		<button class="drawer-close" id="drawer-close">&times;</button>
+	</drawer-head>
+	<drawer-content>
+		<input type="hidden" id="u_id" value="">
+
+		<div class="df">
+			<label>Avatar</label>
+			<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+				<div class="avatar-upload-area" id="avatar-drop-zone" title="Click or drop image here">
+					<img id="preview-avatar" alt="Avatar">
+					<div class="avatar-upload-placeholder" id="avatar-placeholder">&#128247;</div>
+					<button type="button" class="avatar-delete-btn" id="btn-delete-avatar">&#10005; Remove</button>
+				</div>
+				<input type="file" id="input-avatar" accept="image/jpeg,image/png,image/webp" style="display:none">
+				<div class="avatar-upload-hint">
+					Click or drag an image here.<br>
+					JPG, PNG or WebP. Cropped to circle.
+				</div>
+			</div>
+		</div>
+
+		<div class="df">
+			<label for="u_username">Username <span class="field-required">*</span></label>
+			<input type="text" id="u_username" minlength="3" maxlength="64" required autocomplete="off">
+		</div>
+		<div class="df">
+			<label for="u_email">Email <span class="field-required">*</span></label>
+			<input type="email" id="u_email" maxlength="128" required autocomplete="off">
+		</div>
+		<div class="df">
+			<label for="u_password">Password</label>
+			<input type="password" id="u_password" minlength="8" autocomplete="new-password" placeholder="Required for new users">
+			<div class="hint">Minimum 8 characters. Leave blank to keep current password.</div>
+		</div>
+		<div class="df">
+			<label for="u_access_level">Access Level</label>
+			<select id="u_access_level">
+				<option value="254">Admin</option>
+				<option value="234">Super Editor</option>
+				<option value="10">Editor</option>
+				<option value="0">User</option>
+			</select>
+		</div>
+		<div class="df-toggle">
+			<ios-toggle id="u_status" name="u_status" size="sm" checked></ios-toggle>
+			<label for="u_status">Active</label>
+		</div>
+	</drawer-content>
+	<drawer-foot>
+		<button class="btn btn-secondary" id="btn-drawer-cancel">Cancel</button>
+		<button class="btn btn-primary"   id="btn-drawer-save">Save User</button>
+	</drawer-foot>
+</me-drawer>
+
+{/block}
+
+{block name="scripts"}
+<script>
+var NC = {
+	adminUrl: '{$url_admin}',
+	rootUrl:  '{$url_root}'
+};
+</script>
+<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="/js/vendor/ios-toggle.js"></script>
+<script src="/js/vendor/delete-in-place.js"></script>
+<script src="/admin/js/settings.js"></script>
+{/block}
