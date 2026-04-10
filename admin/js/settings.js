@@ -1,0 +1,533 @@
+/* global SimpleNotification */
+(function () {
+	'use strict';
+
+	const AJAX = NC.adminUrl + '?route=settings/ajax';
+
+	const ACCESS_LABELS = { '254': 'Admin', '234': 'Super Editor', '10': 'Editor', '0': 'User' };
+
+	// ── Pending avatar file (not yet submitted) ────────────────────────────────
+	let pendingAvatarFile   = null;
+	let pendingAvatarDelete = false;
+
+	// ── Ajax ──────────────────────────────────────────────────────────────────
+	async function ajax(data) {
+		const fd = new FormData();
+		Object.entries(data).forEach(([k, v]) => fd.append(k, v));
+		const r = await fetch(AJAX, { method: 'POST', body: fd });
+		return r.json();
+	}
+
+	async function ajaxForm(data, files) {
+		const fd = new FormData();
+		Object.entries(data).forEach(([k, v]) => fd.append(k, v));
+		if (files) Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
+		const r = await fetch(AJAX, { method: 'POST', body: fd });
+		return r.json();
+	}
+
+	function notifyOk(msg)  { SimpleNotification.success({ text: msg }); }
+	function notifyErr(msg) { SimpleNotification.error({ text: msg }); }
+	function val(id)  { return (document.getElementById(id)?.value ?? '').trim(); }
+	// ios-toggle: label has id, hidden input has _nc_{id}
+	function togEl(id) {
+		return document.getElementById(id); // finds the label
+	}
+	function tog(id) {
+		// Try hidden input first, fall back to finding ios-toggle by name
+		const hidden = document.getElementById('_nc_' + id);
+		if (hidden) return parseInt(hidden.value || 0) ? 1 : 0;
+		const toggle = document.querySelector('ios-toggle[name="' + id + '"]');
+		if (toggle) {
+			const cb = toggle.querySelector('input[type=checkbox]');
+			return cb && cb.checked ? 1 : 0;
+		}
+		return 0;
+	}
+	function setTog(id, v) {
+		const label = document.getElementById(id);
+		if (!label) return;
+		const toggle = label.closest('ios-toggle') || label.parentElement?.closest('ios-toggle');
+		if (!toggle) return;
+		const cb     = toggle.querySelector('input[type=checkbox]');
+		const hidden = toggle.querySelector('input[type=hidden]');
+		const on     = !!parseInt(v);
+		if (cb)     cb.checked  = on;
+		if (hidden) hidden.value = on ? 1 : 0;
+	}
+	function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
+
+	// ── Tab error indicator ───────────────────────────────────────────────────
+	function tabError(tabName, on) {
+		const btn = document.querySelector('.settings-tab[data-tab="' + tabName + '"]');
+		if (btn) btn.classList.toggle('has-error', on);
+	}
+
+	function clearTabErrors() {
+		document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('has-error'));
+	}
+
+	// ── Tabs ──────────────────────────────────────────────────────────────────
+	document.querySelectorAll('.settings-tab').forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+			document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+			this.classList.add('active');
+			document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+		});
+	});
+
+	// ── Phone masking ─────────────────────────────────────────────────────────
+	document.querySelectorAll('[data-mask="phone"]').forEach(function (el) {
+		el.addEventListener('input', function () {
+			let raw = this.value.replace(/\D/g, '');
+			if (!raw) return;
+			if (raw[0] !== '1') raw = '1' + raw;
+			raw = raw.slice(0, 11);
+			let f = '1+';
+			if (raw.length > 1) f += raw.slice(1, 4);
+			if (raw.length > 4) f += '-' + raw.slice(4, 7);
+			if (raw.length > 7) f += '-' + raw.slice(7, 11);
+			this.value = f;
+		});
+	});
+
+	// ── Image preview (logo/favicon) ──────────────────────────────────────────
+	function bindImagePreview(btnId, inputId, previewId) {
+		const btn     = document.getElementById(btnId);
+		const input   = document.getElementById(inputId);
+		const preview = document.getElementById(previewId);
+		if (!btn || !input) return;
+		btn.addEventListener('click', () => input.click());
+		input.addEventListener('change', function () {
+			const file = this.files[0];
+			if (!file || !preview) return;
+			preview.src = URL.createObjectURL(file);
+			preview.classList.add('show');
+		});
+	}
+	bindImagePreview('btn-upload-logo',    'input-logo',    'preview-logo');
+	bindImagePreview('btn-upload-favicon', 'input-favicon', 'preview-favicon');
+
+	// ── Avatar: drag/drop + click + hover delete ──────────────────────────────
+	const avatarZone    = document.getElementById('avatar-drop-zone');
+	const avatarInput   = document.getElementById('input-avatar');
+	const avatarPreview = document.getElementById('preview-avatar');
+	const avatarPH      = document.getElementById('avatar-placeholder');
+	const avatarDel     = document.getElementById('btn-delete-avatar');
+
+	function setAvatarPreview(url) {
+		if (url) {
+			avatarPreview.src = url;
+			avatarPreview.classList.add('show');
+			avatarPH.style.display     = 'none';
+			avatarDel.classList.add('has-image');
+		} else {
+			avatarPreview.src = '';
+			avatarPreview.classList.remove('show');
+			avatarPH.style.display     = '';
+			avatarDel.classList.remove('has-image');
+		}
+	}
+
+	avatarZone.addEventListener('click', function (e) {
+		if (e.target === avatarDel || avatarDel.contains(e.target)) return;
+		avatarInput.click();
+	});
+
+	avatarInput.addEventListener('change', function () {
+		const file = this.files[0];
+		if (!file) return;
+		pendingAvatarFile   = file;
+		pendingAvatarDelete = false;
+		setAvatarPreview(URL.createObjectURL(file));
+	});
+
+	// Drag and drop
+	let dragCount = 0;
+	avatarZone.addEventListener('dragenter', function (e) {
+		e.preventDefault(); dragCount++;
+		this.classList.add('drag-over');
+	});
+	avatarZone.addEventListener('dragleave', function () {
+		dragCount--;
+		if (dragCount <= 0) { dragCount = 0; this.classList.remove('drag-over'); }
+	});
+	avatarZone.addEventListener('dragover', e => e.preventDefault());
+	avatarZone.addEventListener('drop', function (e) {
+		e.preventDefault(); dragCount = 0;
+		this.classList.remove('drag-over');
+		const file = e.dataTransfer.files[0];
+		if (!file) return;
+		pendingAvatarFile   = file;
+		pendingAvatarDelete = false;
+		setAvatarPreview(URL.createObjectURL(file));
+	});
+
+	// Hover delete
+	avatarDel.addEventListener('click', function (e) {
+		e.stopPropagation();
+		pendingAvatarFile   = null;
+		pendingAvatarDelete = true;
+		setAvatarPreview(null);
+		avatarInput.value = '';
+	});
+
+	// ── Load all settings ─────────────────────────────────────────────────────
+	// ── Debounce ──────────────────────────────────────────────────────────────
+	function debounce(fn, ms) {
+		var t;
+		return function () {
+			var a = arguments;
+			clearTimeout(t);
+			t = setTimeout(function () { fn.apply(null, a); }, ms);
+		};
+	}
+
+	var debouncedSave = debounce(function () {
+		var btn = document.getElementById('btn-save-all');
+		if (btn) btn.click();
+	}, 1000);
+
+	// Auto-save on ios-toggle changes outside the user drawer
+	document.addEventListener('ios-toggle', function (e) {
+		const src = e.detail.source;
+		// Only auto-save settings toggles, not user-drawer or table toggles
+		if (src.dataset.action === 'status') return; // user table toggle handled separately
+		if (src.closest('#user-drawer'))     return; // user drawer toggle
+		debouncedSave();
+	});
+
+	async function load() {
+		const res = await ajax({ action: 'load' });
+		if (!res.ok) { notifyErr(res.message); return; }
+
+		const s = res.settings || {};
+
+		setVal('s_site_name',               s.site_name               || '');
+		setVal('s_site_email',              s.site_email              || '');
+		setVal('s_site_currency',           s.site_currency           || '$');
+		setVal('s_seo_title_default',       s.seo_title_default       || '');
+		setVal('s_seo_description_default', s.seo_description_default || '');
+		setVal('s_seo_keywords_default',    s.seo_keywords_default    || '');
+
+		if (s.site_logo)    { const p = document.getElementById('preview-logo');    if (p) { p.src = s.site_logo;    p.classList.add('show'); } }
+		if (s.site_favicon) { const p = document.getElementById('preview-favicon'); if (p) { p.src = s.site_favicon; p.classList.add('show'); } }
+
+		setVal('s_address',           s.address           || '');
+		setVal('s_phone',             s.phone             || '');
+		setVal('s_timezone',          s.timezone          || 'America/New_York');
+		setVal('s_date_format',       s.date_format       || 'm/d/Y');
+		setVal('s_currency_position', s.currency_position || 'before');
+
+		setVal('s_smtp_host',  s.smtp_host  || '');
+		setVal('s_smtp_user',  s.smtp_user  || '');
+		setVal('s_smtp_pass',  s.smtp_pass  || '');
+		setVal('s_smtp_port',  s.smtp_port  || '587');
+		setVal('s_mail_alert', s.mail_alert || '');
+
+		setTog('s_maintenance_mode',  s.maintenance_mode  || 0);
+		setTog('s_use_seo_urls',      s.use_seo_urls !== undefined ? s.use_seo_urls : 1);
+		setVal('s_admin_path',        s.admin_path        || '');
+		setVal('s_pw_min_length',     s.pw_min_length     || '8');
+		setTog('s_pw_require_upper',  s.pw_require_upper  || 0);
+		setTog('s_pw_require_number', s.pw_require_number || 0);
+		setTog('s_pw_require_symbol', s.pw_require_symbol || 0);
+		setTog('s_display_errors',    s.display_errors    || 0);
+		setTog('s_log_errors',        s.log_errors !== undefined ? s.log_errors : 1);
+
+		setVal('error-log', res.log_content || '');
+		renderUsers(res.users || []);
+	}
+
+	// ── One Save button for all tabs ──────────────────────────────────────────
+	document.getElementById('btn-save-all').addEventListener('click', async function () {
+		const saveBtn = this;
+		const statusEl = document.getElementById('save-status');
+		saveBtn.disabled = true;
+		statusEl.textContent = 'Saving…';
+		clearTabErrors();
+
+		let errors = [];
+
+		// Validate store
+		const nameEl = document.getElementById('s_site_name');
+		if (!nameEl.value.trim()) {
+			nameEl.classList.add('field-error');
+			tabError('store', true);
+			errors.push('Store name is required.');
+		} else {
+			nameEl.classList.remove('field-error');
+		}
+
+		if (errors.length) {
+			saveBtn.disabled = false;
+			statusEl.textContent = '';
+			errors.forEach(notifyErr);
+			// Switch to first tab with error
+			const errTab = document.querySelector('.settings-tab.has-error');
+			if (errTab) errTab.click();
+			return;
+		}
+
+		// Single save_all call with all fields
+		const res = await ajaxForm({
+			action:                  'save_all',
+			// Store
+			site_name:               val('s_site_name'),
+			site_email:              val('s_site_email'),
+			site_currency:           val('s_site_currency'),
+			seo_title_default:       val('s_seo_title_default'),
+			seo_description_default: val('s_seo_description_default'),
+			seo_keywords_default:    val('s_seo_keywords_default'),
+			// Local
+			address:                 val('s_address'),
+			phone:                   val('s_phone'),
+			timezone:                val('s_timezone'),
+			date_format:             val('s_date_format'),
+			currency_position:       val('s_currency_position'),
+			// Mail
+			smtp_host:               val('s_smtp_host'),
+			smtp_user:               val('s_smtp_user'),
+			smtp_pass:               document.getElementById('s_smtp_pass')?.value || '',
+			smtp_port:               val('s_smtp_port'),
+			mail_alert:              val('s_mail_alert'),
+			// Server
+			admin_path:              val('s_admin_path'),
+			maintenance_mode:        tog('s_maintenance_mode'),
+			use_seo_urls:            tog('s_use_seo_urls'),
+			pw_min_length:           val('s_pw_min_length'),
+			pw_require_upper:        tog('s_pw_require_upper'),
+			pw_require_number:       tog('s_pw_require_number'),
+			pw_require_symbol:       tog('s_pw_require_symbol'),
+			display_errors:          tog('s_display_errors'),
+			log_errors:              tog('s_log_errors'),
+		}, {
+			logo:    document.getElementById('input-logo')?.files[0],
+			favicon: document.getElementById('input-favicon')?.files[0],
+		});
+
+		saveBtn.disabled = false;
+		statusEl.textContent = '';
+
+		if (!res.ok) {
+			notifyErr(res.message);
+			return;
+		}
+
+		if (res.site_name) {
+			const topbar = document.getElementById('topbar-store-name');
+			if (topbar) topbar.textContent = res.site_name;
+		}
+
+		notifyOk(res.message);
+	});
+
+	// ── Error log ─────────────────────────────────────────────────────────────
+	document.getElementById('btn-clear-log').addEventListener('click', async function () {
+		this.disabled = true;
+		const res = await ajax({ action: 'clear_log' });
+		this.disabled = false;
+		if (!res.ok) { notifyErr(res.message); return; }
+		setVal('error-log', '');
+		notifyOk(res.message);
+	});
+
+	document.getElementById('btn-download-log').addEventListener('click', function () {
+		window.location.href = AJAX + '&action=download_log';
+	});
+
+	// ── Users ─────────────────────────────────────────────────────────────────
+	const userTbody = document.getElementById('user-tbody');
+	const drawer    = document.getElementById('user-drawer');
+	const overlay   = document.getElementById('drawer-overlay');
+
+	function renderUsers(users) {
+		userTbody.innerHTML = '';
+		if (!users.length) {
+			userTbody.innerHTML = '<tr><td colspan="5"><div class="nc-empty">No users found.</div></td></tr>';
+			return;
+		}
+		users.forEach(u => userTbody.appendChild(buildUserRow(u)));
+	}
+
+	function accessLabel(level) { return ACCESS_LABELS[String(level)] || 'Custom'; }
+	function initials(name) { return String(name || '').slice(0, 2).toUpperCase(); }
+
+	function buildUserRow(u) {
+		const tr      = document.createElement('tr');
+		tr.dataset.id = u.id;
+		const isAdmin  = u.access_level == 254;
+		const inactive = u.status == 0;
+		const av = u.avatar
+			? '<img src="' + esc(u.avatar) + '" class="user-avatar-sm" alt="">'
+			: '<span class="user-initials-sm">' + esc(initials(u.username)) + '</span>';
+
+		tr.innerHTML =
+			'<td style="display:flex;align-items:center">' +
+				av +
+				'<button class="user-name-link" data-id="' + u.id + '">' + esc(u.username) + '</button>' +
+			'</td>' +
+			'<td>' + esc(u.email) + '</td>' +
+			'<td><span class="access-badge' + (isAdmin ? ' is-admin' : '') + '">' + accessLabel(u.access_level) + '</span></td>' +
+			'<td class="col-toggle">' +
+				'<ios-toggle ' + (u.status == 1 ? 'checked' : '') + ' size="sm" data-id="' + u.id + '" data-action="status"></ios-toggle>' +
+			'</td>' +
+			'<td class="delete-col">' +
+				'<span class="delete-fade' + (inactive ? ' show' : '') + '" id="del-' + u.id + '">' +
+				'<delete-in-place caption="&#128465;" confirm="Delete user?" data-id="' + u.id + '"></delete-in-place>' +
+				'</span>' +
+			'</td>';
+		return tr;
+	}
+
+	// ── Drawer ────────────────────────────────────────────────────────────────
+	function openDrawer(title) {
+		document.getElementById('drawer-title').textContent = title;
+		drawer.classList.add('open');
+		overlay.classList.add('show');
+	}
+
+	function closeDrawer() {
+		drawer.classList.remove('open');
+		overlay.classList.remove('show');
+	}
+
+	function resetDrawer() {
+		setVal('u_id', '');
+		setVal('u_username', '');
+		setVal('u_email', '');
+		document.getElementById('u_password').value = '';
+		document.getElementById('u_password').placeholder = 'Required for new users';
+		setVal('u_access_level', '254');
+		const stReset = togEl('u_status');
+		if (stReset) stReset && setTog('u_status', 1);
+		pendingAvatarFile   = null;
+		pendingAvatarDelete = false;
+		setAvatarPreview(null);
+		avatarInput.value = '';
+	}
+
+	document.getElementById('btn-add-user').addEventListener('click', function () {
+		resetDrawer();
+		openDrawer('Add User');
+		document.getElementById('u_username').focus();
+	});
+
+	// ── Click username to edit ────────────────────────────────────────────────
+	userTbody.addEventListener('click', function (e) {
+		const btn = e.target.closest('.user-name-link');
+		if (!btn) return;
+		const id = btn.dataset.id;
+		const tr = userTbody.querySelector('tr[data-id="' + id + '"]');
+		if (!tr) return;
+
+		const cells    = tr.querySelectorAll('td');
+		const toggle   = tr.querySelector('ios-toggle');
+		const badge    = tr.querySelector('.access-badge');
+		const badgeText = badge?.textContent.trim() || 'Admin';
+		const lvl = Object.entries(ACCESS_LABELS).find(([, v]) => v === badgeText)?.[0] || '254';
+
+		setVal('u_id',           id);
+		setVal('u_username',     btn.textContent.trim());
+		setVal('u_email',        cells[1]?.textContent.trim() || '');
+		document.getElementById('u_password').value       = '';
+		document.getElementById('u_password').placeholder = 'Leave blank to keep current';
+		setVal('u_access_level', lvl);
+		const stEdit = togEl('u_status');
+		if (stEdit) stEdit && setTog('u_status', toggle?.checked ? 1 : 0);
+
+		// Avatar preview
+		const av = tr.querySelector('.user-avatar-sm');
+		pendingAvatarFile   = null;
+		pendingAvatarDelete = false;
+		avatarInput.value   = '';
+		setAvatarPreview(av ? av.src : null);
+
+		openDrawer('Edit User');
+	});
+
+	// ── Save user ─────────────────────────────────────────────────────────────
+	document.getElementById('btn-drawer-save').addEventListener('click', async function () {
+		const uEl = document.getElementById('u_username');
+		const eEl = document.getElementById('u_email');
+		if (!uEl.reportValidity() || !eEl.reportValidity()) return;
+
+		const id = val('u_id');
+
+		this.disabled = true;
+		const res = await ajaxForm({
+			action:        'save_user',
+			id:            id,
+			username:      val('u_username'),
+			email:         val('u_email'),
+			password:      document.getElementById('u_password').value,
+			access_level:  val('u_access_level'),
+			status:        tog('u_status'),
+			delete_avatar: pendingAvatarDelete ? 1 : 0,
+		}, pendingAvatarFile ? { avatar: pendingAvatarFile } : null);
+
+		this.disabled = false; // ALWAYS re-enable
+
+		if (!res.ok) { notifyErr(res.message); return; }
+		notifyOk(res.message);
+
+		const existing = userTbody.querySelector('tr[data-id="' + res.user.id + '"]');
+		const newRow   = buildUserRow(res.user);
+		if (existing) userTbody.replaceChild(newRow, existing);
+		else          userTbody.appendChild(newRow);
+		closeDrawer();
+	});
+
+	document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+	document.getElementById('btn-drawer-cancel').addEventListener('click', closeDrawer);
+	overlay.addEventListener('click', closeDrawer);
+
+	// ── Toggle active — show/hide delete ─────────────────────────────────────
+	document.addEventListener('ios-toggle', async function (e) {
+		const src = e.detail.source;
+		if (src.dataset.action !== 'status') return;
+		const id      = src.dataset.id;
+		const delSpan = document.getElementById('del-' + id);
+		if (delSpan) delSpan.classList.toggle('show', !e.detail.checked);
+
+		const tr  = userTbody.querySelector('tr[data-id="' + id + '"]');
+		const lvl = tr?.querySelector('.access-badge')?.textContent.trim() || '';
+		const level = Object.entries(ACCESS_LABELS).find(([, v]) => v === lvl)?.[0] || '254';
+
+		const res = await ajax({
+			action:       'save_user',
+			id:           id,
+			username:     tr?.querySelector('.user-name-link')?.textContent.trim() || '',
+			email:        tr?.querySelectorAll('td')[1]?.textContent.trim() || '',
+			access_level: level,
+			status:       e.detail.checked ? 1 : 0,
+		});
+		if (!res.ok) notifyErr(res.message);
+	});
+
+	// ── Delete user ───────────────────────────────────────────────────────────
+	userTbody.addEventListener('dip-confirm', async function (e) {
+		const id  = e.detail.id;
+		const res = await ajax({ action: 'delete_user', id });
+		if (!res.ok) { notifyErr(res.message); return; }
+		const tr = userTbody.querySelector('tr[data-id="' + id + '"]');
+		if (tr) {
+			tr.classList.add('row-removing');
+			setTimeout(function () {
+				tr.remove();
+				if (!userTbody.querySelector('tr[data-id]')) {
+					userTbody.innerHTML = '<tr><td colspan="5"><div class="nc-empty">No users found.</div></td></tr>';
+				}
+			}, 300);
+		}
+		notifyOk(res.message);
+	});
+
+	function esc(str) {
+		return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+	}
+
+	load();
+
+})();

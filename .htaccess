@@ -1,0 +1,18 @@
+Options -Indexes
+DirectoryIndex index.php
+
+RewriteEngine On
+
+# Block direct browser access to admin/
+#RewriteCond %{REQUEST_URI} ^/admin(/|$) [NC]
+#RewriteRule ^ - [F,L]
+
+# Map public admin path to admin/index.php
+RewriteRule ^Cc7DZbWFVDSh/?$ /admin/index.php [L,QSA]
+RewriteRule ^Cc7DZbWFVDSh/(.*)$ /admin/index.php [L,QSA]
+
+# Route everything else through index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /index.php [L,QSA]
+ 

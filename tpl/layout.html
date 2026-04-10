@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{block name="title"}{$site_name}{/block}</title>
+	<link rel="stylesheet" href="/css/main.css">
+	<link rel="stylesheet" href="/usermods/css/store.css">
+	<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
+	{block name="head"}{/block}
+</head>
+<body>
+
+{* ── Masthead ──────────────────────────────────────────────────────────────── *}
+<header id="masthead">
+	<div id="store-logo">
+		<a href="{$url_root}">{$site_name}</a>
+	</div>
+	<div id="store-search">
+		<form action="{$url_root}" method="get">
+			<input type="hidden" name="route" value="search">
+			<input type="text" name="q" placeholder="Search..." value="{$q|default:''}">
+			<button type="submit">Go</button>
+		</form>
+	</div>
+	<div id="store-cart-summary">
+		<a href="{$url_root}?route=cart">
+			Cart: {$cart_qty|default:0} item(s) — {$site_currency}{$cart_total|default:'0.00'}
+		</a>
+	</div>
+</header>
+
+{* ── Top navigation ────────────────────────────────────────────────────────── *}
+<nav id="top-nav">
+	<ul>
+		<li><a href="{$url_root}">Home</a></li>
+		<li><a href="{$url_root}?route=contact">Contact</a></li>
+		{if $is_logged_in}
+		<li><a href="{$url_root}?route=account">Account</a></li>
+		<li><a href="{$url_root}?route=account/logout">Log Out</a></li>
+		{else}
+		<li><a href="{$url_root}?route=account/login">Log In</a></li>
+		{/if}
+		<li><a href="{$url_root}?route=checkout">Checkout</a></li>
+		<li><a href="{$url_root}?route=cart">Cart</a></li>
+	</ul>
+</nav>
+
+{* ── Flash message ─────────────────────────────────────────────────────────── *}
+{if $flash}
+<div id="flash" class="flash flash-{$flash.type}">{$flash.message|escape}</div>
+{/if}
+
+{* ── Main layout: sidebar + content ───────────────────────────────────────── *}
+<div id="main-wrap">
+
+	<aside id="sidebar">
+		{* Categories *}
+		<div class="sidebar-box">
+			<div class="sidebar-box-head">Categories</div>
+			<div class="sidebar-box-body">
+				{block name="sidebar_categories"}
+				{include file="partials/sidebar_categories.html"}
+				{/block}
+			</div>
+		</div>
+		{* What's New *}
+		<div class="sidebar-box">
+			<div class="sidebar-box-head">What's New</div>
+			<div class="sidebar-box-body">
+				{block name="sidebar_new"}
+				{include file="partials/sidebar_new.html"}
+				{/block}
+			</div>
+		</div>
+		{* Top Sellers *}
+		<div class="sidebar-box">
+			<div class="sidebar-box-head">Top Sellers</div>
+			<div class="sidebar-box-body">
+				{block name="sidebar_top"}
+				{include file="partials/sidebar_top.html"}
+				{/block}
+			</div>
+		</div>
+		{* User-customizable sidebar content *}
+		{block name="sidebar_extra"}
+		{include file="../../usermods/sidebar.html" _optional=true}
+		{/block}
+	</aside>
+
+	<main id="content">
+		{block name="content"}{/block}
+	</main>
+
+</div>{* /main-wrap *}
+
+{* ── Footer ────────────────────────────────────────────────────────────────── *}
+<footer id="footer">
+	<p>&copy; {$smarty.now|date_format:'%Y'} {$site_name|escape}. All rights reserved.</p>
+	{block name="footer_extra"}{/block}
+</footer>
+
+{* ── JS ────────────────────────────────────────────────────────────────────── *}
+<script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="/js/vendor/ios-toggle.js"></script>
+<script src="/js/vendor/delete-in-place.js"></script>
+<script src="/js/vendor/maps-edge-date.js"></script>
+<script src="/js/app.js"></script>
+{block name="scripts"}{/block}
+
+</body>
+</html>

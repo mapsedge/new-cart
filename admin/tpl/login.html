@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Admin Login — {$site_name|escape}</title>
+	<style>
+		*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+			background: #f0f2f5;
+			min-height: 100vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 2rem;
+		}
+
+		#login-box {
+			background: #fff;
+			border: 1px solid #c9cdd4;
+			box-shadow: 0 4px 32px rgba(0,0,0,.18);
+			border-radius: .75rem;
+			width: 100%;
+			max-width: 380px;
+			overflow: hidden;
+		}
+
+		#login-header {
+			background: #2c3e50;
+			color: #fff;
+			padding: 1.5rem 2rem;
+			text-align: center;
+		}
+
+		#login-header h1 {
+			font-size: 1.1rem;
+			font-weight: 600;
+			opacity: .75;
+			margin-bottom: .2rem;
+			text-transform: uppercase;
+			letter-spacing: .08em;
+		}
+
+		#login-header .store-name {
+			font-size: 1.4rem;
+			font-weight: 700;
+		}
+
+		#login-form { padding: 2rem; }
+
+		.field { margin-bottom: 1rem; }
+		.field label {
+			display: block;
+			font-size: .85rem;
+			font-weight: 600;
+			color: #1a1a1a;
+			margin-bottom: .3rem;
+		}
+		.field input {
+			width: 100%;
+			padding: .55rem .75rem;
+			border: 1px solid #d1d5db;
+			border-radius: .375rem;
+			font-size: .95rem;
+			color: #1a1a1a;
+			outline: none;
+			transition: border-color .15s, box-shadow .15s;
+		}
+		.field input:focus {
+			border-color: #2563eb;
+			box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+		}
+
+		.error-msg {
+			background: #fee2e2;
+			color: #7f1d1d;
+			border-radius: .375rem;
+			padding: .6rem .85rem;
+			font-size: .87rem;
+			font-weight: 500;
+			margin-bottom: 1rem;
+		}
+
+		button[type=submit] {
+			width: 100%;
+			padding: .6rem;
+			background: #2563eb;
+			color: #fff;
+			border: none;
+			border-radius: .375rem;
+			font-size: .95rem;
+			font-weight: 600;
+			cursor: pointer;
+			transition: filter .15s;
+			margin-top: .5rem;
+		}
+		button[type=submit]:hover { filter: brightness(.9); }
+
+		#login-footer {
+			text-align: center;
+			padding: .85rem;
+			font-size: .75rem;
+			color: #555;
+			border-top: 1px solid #e5e7eb;
+		}
+	</style>
+</head>
+<body>
+
+<div id="login-box">
+	<div id="login-header">
+		<h1>Admin</h1>
+		<div class="store-name">{$site_name|escape}</div>
+	</div>
+	<div id="login-form">
+		{if $error}
+		<div class="error-msg">{$error|escape}</div>
+		{/if}
+		<form method="post" action="{$url_admin}?route=login">
+			<div class="field">
+				<label for="username">Username</label>
+				<input type="text" id="username" name="username" autocomplete="username" autofocus>
+			</div>
+			<div class="field">
+				<label for="password">Password</label>
+				<input type="password" id="password" name="password" autocomplete="current-password">
+			</div>
+			<button type="submit">Log In</button>
+		</form>
+	</div>
+	<div id="login-footer">
+		new-cart &mdash; &copy; {$smarty.now|date_format:'%Y'} Map's Edge Creative
+	</div>
+</div>
+
+</body>
+</html>
