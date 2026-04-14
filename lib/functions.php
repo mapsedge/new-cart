@@ -197,3 +197,87 @@ function cc_exception_handler(Throwable $e): void {
 		echo "An error occurred.";
 	}
 }
+
+// ── Catalog sidebar data ───────────────────────────────────────────────────────
+function load_menu(int $menu_id, string $p): array {
+	if (!$menu_id) return [];
+	$items = DB::rows(
+		"SELECT mi.*, p.slug AS page_slug, c.slug AS category_slug,
+		        c.name AS category_name
+		 FROM `{$p}menu_items` mi
+		 LEFT JOIN `{$p}pages` p ON p.id = mi.page_id
+		 LEFT JOIN `{$p}categories` c ON c.id = mi.category_id
+		 WHERE mi.menu_id=? AND mi.enabled=1
+		 ORDER BY mi.display_order ASC",
+		[$menu_id]
+	);
+	foreach ($items as &$item) {
+		if ($item['item_type'] === 'category_tree') {
+			// Expand all active categories
+			$cats = DB::rows(
+				"SELECT slug, name,
+				 (SELECT COUNT(*) FROM `{$p}categories_products` cp
+				  JOIN `{$p}products` pp ON pp.id=cp.product_id
+				  WHERE cp.category_id=c.id AND pp.status>0) AS cnt
+				 FROM `{$p}categories` c WHERE status>0 ORDER BY display_order ASC, name ASC"
+			);
+			$item['expanded_categories'] = $cats;
+		}
+		if ($item['show_count'] && $item['category_id']) {
+			$item['product_count'] = (int)DB::val(
+				"SELECT COUNT(*) FROM `{$p}categories_products` cp
+				 JOIN `{$p}products` p ON p.id=cp.product_id
+				 WHERE cp.category_id=? AND p.status>0",
+				[$item['category_id']]
+			);
+		}
+		if ($item['submenu_id']) {
+			$item['submenu_items'] = load_menu((int)$item['submenu_id'], $p);
+		}
+	}
+	unset($item);
+	return $items;
+}
+
+function catalog_sidebar(Smarty $smarty): void {
+	$p = DB_PREFIX;
+
+	// Active categories
+	$cats = DB::rows(
+		"SELECT id, name, slug FROM `{$p}categories`
+		 WHERE status > 0 ORDER BY display_order ASC, name ASC"
+	);
+	$smarty->assign('sidebar_categories', $cats);
+
+	// What's New (last 6 products)
+	$new = DB::rows(
+		"SELECT id, name, slug FROM `{$p}products`
+		 WHERE status > 0 ORDER BY id DESC LIMIT 6"
+	);
+	$smarty->assign('sidebar_new', $new);
+
+	// Top sellers (by order count)
+	$top = DB::rows(
+		"SELECT p.id, p.name, p.slug, COUNT(oi.id) AS sold
+		 FROM `{$p}products` p
+		 LEFT JOIN `{$p}order_items` oi ON oi.product_id = p.id
+		 WHERE p.status > 0
+		 GROUP BY p.id ORDER BY sold DESC, p.name ASC LIMIT 6"
+	);
+	$smarty->assign('sidebar_top', $top);
+
+	// Global menus
+	$menu1_row = DB::row("SELECT id FROM `{$p}menus` WHERE menu_role='menu1' LIMIT 1");
+	$menu2_row = DB::row("SELECT id FROM `{$p}menus` WHERE menu_role='menu2' LIMIT 1");
+	$smarty->assign('menu1', $menu1_row ? load_menu((int)$menu1_row['id'], $p) : []);
+	$smarty->assign('menu2', $menu2_row ? load_menu((int)$menu2_row['id'], $p) : []);
+
+	// Store settings for layout
+	$s = [];
+	$rows = DB::rows("SELECT `key`,`value` FROM `{$p}settings` WHERE `key` IN ('store_phone','store_logo_url')");
+	foreach ($rows as $row) $s[$row['key']] = $row['value'];
+	$smarty->assign('store_phone',    $s['store_phone']    ?? '');
+	$smarty->assign('store_logo_url', $s['store_logo_url'] ?? '');
+	$smarty->assign('cart_subtotal',  Cart::subtotal());
+	$smarty->assign('wl_count',       count(WishList::guestLists()));
+}

@@ -1,0 +1,36 @@
+/* ── Messages admin ── */
+.msg-unread td { font-weight: 600; }
+.msg-summary { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.message-detail-head {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1.25rem;
+	padding-bottom: .75rem;
+	border-bottom: 1px solid var(--nc-border);
+	font-weight: 700;
+	font-size: 1rem;
+}
+.message-detail-body { max-width: 600px; }
+.msg-field {
+	display: flex;
+	gap: 1rem;
+	padding: .6rem 0;
+	border-bottom: 1px solid var(--nc-border-light, var(--nc-border));
+	align-items: flex-start;
+}
+.msg-field-label {
+	font-weight: 700;
+	font-size: .85rem;
+	color: var(--nc-text-dim);
+	min-width: 120px;
+	flex-shrink: 0;
+}
+.msg-field-value { flex: 1; word-break: break-word; }
+.msg-meta {
+	display: flex;
+	gap: 1.5rem;
+	margin-top: .85rem;
+	font-size: .8rem;
+	color: var(--nc-text-dim);
+}

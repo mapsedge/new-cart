@@ -1,0 +1,153 @@
+/* ── Options ───────────────────────────────────────────────────────────────── */
+
+/* ── Option cards list ── */
+#options-list {
+	display: flex;
+	flex-direction: column;
+	gap: .5rem;
+}
+
+.opt-card {
+	background: var(--nc-bg);
+	border: 1px solid var(--nc-border);
+	border-radius: var(--nc-radius);
+	padding: .65rem 1rem;
+	display: flex;
+	align-items: center;
+	gap: .75rem;
+	cursor: pointer;
+	transition: background .15s;
+}
+.opt-card:hover { background: var(--nc-hover, #f8f9fa); }
+
+.opt-card-drag {
+	color: var(--nc-text-dim);
+	cursor: grab;
+	font-size: 1.1rem;
+	flex-shrink: 0;
+}
+
+.opt-card-name {
+	font-weight: 600;
+	color: var(--nc-text);
+	flex: 1;
+}
+
+.opt-card-type {
+	font-size: .8rem;
+	color: var(--nc-text-dim);
+	background: var(--nc-bg-alt);
+	border: 1px solid var(--nc-border-light);
+	border-radius: 99px;
+	padding: .15rem .6rem;
+	flex-shrink: 0;
+}
+
+.opt-card-count {
+	font-size: .8rem;
+	color: var(--nc-text-dim);
+	flex-shrink: 0;
+}
+
+/* ── Values section in drawer ── */
+.opt-values-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: .5rem;
+}
+
+.opt-values-head .df-section {
+	margin-bottom: 0;
+}
+
+.opt-value-row {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	padding: .4rem .5rem;
+	border: 1px solid var(--nc-border);
+	border-radius: var(--nc-radius);
+	margin-bottom: .35rem;
+	background: var(--nc-bg);
+	cursor: grab;
+}
+
+.opt-value-drag {
+	color: var(--nc-text-dim);
+	font-size: 1rem;
+	flex-shrink: 0;
+}
+
+.opt-value-img-wrap {
+	width: 36px;
+	height: 36px;
+	flex-shrink: 0;
+	position: relative;
+}
+
+.opt-value-img {
+	width: 36px;
+	height: 36px;
+	object-fit: cover;
+	border-radius: 3px;
+	display: block;
+	background: var(--nc-bg-alt);
+	border: 1px solid var(--nc-border-light);
+}
+
+.opt-value-img-placeholder {
+	width: 36px;
+	height: 36px;
+	border: 1px dashed var(--nc-border);
+	border-radius: 3px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: .75rem;
+	color: var(--nc-text-dim);
+	cursor: pointer;
+	flex-shrink: 0;
+}
+.opt-value-img-placeholder:hover { background: var(--nc-hover); }
+
+.opt-value-text {
+	flex: 1;
+	font-size: .88rem;
+	color: var(--nc-text);
+	min-width: 0;
+}
+
+/* Edit-in-place input for value text */
+.opt-value-text-input {
+	flex: 1;
+	font-size: .88rem;
+	color: var(--nc-text);
+	border: 1px solid var(--nc-primary);
+	border-radius: var(--nc-radius);
+	padding: .2rem .4rem;
+	outline: none;
+	min-width: 0;
+}
+
+/* ── Placeholder toggle ── */
+#opt-placeholder-wrap { display: block; }
+#opt-values-section   { display: block; }
+
+/* ── Shared utilities needed on this page ── */
+.btn-link {
+	background: none;
+	border: none;
+	color: var(--nc-primary);
+	cursor: pointer;
+	padding: 0;
+	font-size: inherit;
+	text-decoration: underline;
+}
+.btn-link:hover { color: var(--nc-primary-hover); }
+
+.drag-over {
+	outline: 2px dashed var(--nc-primary);
+	outline-offset: -2px;
+	background: rgba(37,99,235,.04);
+}

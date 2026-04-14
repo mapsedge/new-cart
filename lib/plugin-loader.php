@@ -84,7 +84,7 @@ class PluginLoader {
 		if (!$xml) return null;
 
 		$manifest = [
-			'name'        => (string)($xml->name        ?? ''),
+			'name'        => (string)($xml->n           ?? $xml->name ?? ''),
 			'code'        => (string)($xml->code        ?? ''),
 			'version'     => (string)($xml->version     ?? ''),
 			'author'      => (string)($xml->author      ?? ''),
@@ -92,7 +92,15 @@ class PluginLoader {
 			'description' => (string)($xml->description ?? ''),
 			'date'        => (string)($xml->date        ?? ''),
 			'tables'      => [],
+			'settings'    => [],
 		];
+
+		// Parse settings key declarations
+		if (isset($xml->settings->key)) {
+			foreach ($xml->settings->key as $key) {
+				$manifest['settings'][] = (string)$key;
+			}
+		}
 
 		// Parse table declarations
 		if (isset($xml->tables->table)) {

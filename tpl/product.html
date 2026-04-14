@@ -1,0 +1,450 @@
+{extends file="layout.html"}
+
+{block name="title"}{$product.name|escape} — {$site_name}{/block}
+{block name="meta_desc"}{$product.seo_description|escape|default:$product.description|strip_tags|truncate:200|escape}{/block}
+
+{block name="content"}
+<div class="product-detail">
+
+	{* ── Gallery ── *}
+	<div class="product-gallery">
+		<div class="product-gallery-main" id="gallery-main" role="button"
+		     aria-label="View full-size image" tabindex="0">
+			{if $images}
+				<img id="main-image"
+				     src="{$images[0].filename|escape}"
+				     alt="{$product.name|escape}">
+			{else}
+				<div class="product-card-no-image" aria-hidden="true">&#128247;</div>
+			{/if}
+		</div>
+		{if $images|count > 1}
+		<div class="product-thumbnails" role="list">
+			{foreach $images as $i => $img}
+			<button class="product-thumb{if $i == 0} active{/if}"
+			        data-src="{$img.filename|escape}"
+			        aria-label="View image {$i+1}"
+			        role="listitem">
+				<img src="{$img.filename|escape}" alt="{$product.name|escape} image {$i+1}" loading="lazy">
+			</button>
+			{/foreach}
+		</div>
+		{/if}
+	</div>
+
+	{* Lightbox *}
+	<div id="product-lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+		<button id="lightbox-close" aria-label="Close">&times;</button>
+		<button id="lightbox-prev" aria-label="Previous image">&#8249;</button>
+		<img id="lightbox-img" src="" alt="{$product.name|escape}">
+		<button id="lightbox-next" aria-label="Next image">&#8250;</button>
+	</div>
+
+	{* ── Info ── *}
+	<div class="product-info">
+		<h1>{$product.name|escape}</h1>
+
+		<div class="product-price-row">
+			<span class="product-price">{$site_currency}{$product.price|string_format:"%.2f"}</span>
+			{if $product.list_price && $product.list_price > $product.price}
+				<span class="product-list-price">{$site_currency}{$product.list_price|string_format:"%.2f"}</span>
+			{/if}
+		</div>
+
+		{if $product.description}
+		<p class="product-short-desc">{$product.description|escape}</p>
+		{/if}
+
+		{if $product.stock !== null && $product.stock == 0}
+		<div class="product-stock-warning" role="alert">
+			&#9888; This item is currently out of stock.
+		</div>
+		{/if}
+
+		{* ── Options ── *}
+		{if $product_options}
+		<div class="product-options" id="product-options">
+			{foreach $product_options as $po}
+			<div class="product-option" data-po-id="{$po.id}">
+				<label for="opt-{$po.id}">
+					{if $po.label}{$po.label|escape}{else}{$po.option_name|escape}{/if}
+					{if $po.required}<span class="option-required" aria-hidden="true">*</span>{/if}
+				</label>
+
+				{if $po.type == 'select'}
+					<select id="opt-{$po.id}" name="options[{$po.id}]"
+					        {if $po.required}required aria-required="true"{/if}
+					        data-po-id="{$po.id}">
+						<option value="">{if $po.placeholder}{$po.placeholder|escape}{else}— Select —{/if}</option>
+						{foreach $po.values as $v}
+						<option value="{$v.id}"
+						        data-price-prefix="{$v.price_prefix}"
+						        data-price-mod="{$v.price_modifier}">
+							{if $v.label}{$v.label|escape}{else}{$v.value_text|escape}{/if}
+							{if $v.price_modifier > 0}
+								({$v.price_prefix}{$site_currency}{$v.price_modifier|string_format:"%.2f"})
+							{/if}
+						</option>
+						{/foreach}
+					</select>
+
+				{elseif $po.type == 'radio'}
+					<div class="radio-group" role="radiogroup">
+						{foreach $po.values as $v}
+						<label>
+							<input type="radio" name="options[{$po.id}]" value="{$v.id}"
+							       data-po-id="{$po.id}"
+							       data-price-prefix="{$v.price_prefix}"
+							       data-price-mod="{$v.price_modifier}"
+							       {if $po.required}required{/if}>
+							{if $v.image}<img src="{$v.image|escape}" alt="{$v.value_text|escape}" style="width:24px;height:24px;object-fit:cover;border-radius:3px">{/if}
+							{if $v.label}{$v.label|escape}{else}{$v.value_text|escape}{/if}
+							{if $v.price_modifier > 0}({$v.price_prefix}{$site_currency}{$v.price_modifier|string_format:"%.2f"}){/if}
+						</label>
+						{/foreach}
+					</div>
+
+				{elseif $po.type == 'checkbox'}
+					<div class="checkbox-group">
+						{foreach $po.values as $v}
+						<label>
+							<input type="checkbox" name="options[{$po.id}][]" value="{$v.id}"
+							       data-po-id="{$po.id}"
+							       data-price-prefix="{$v.price_prefix}"
+							       data-price-mod="{$v.price_modifier}">
+							{if $v.image}<img src="{$v.image|escape}" alt="{$v.value_text|escape}" style="width:24px;height:24px;object-fit:cover;border-radius:3px">{/if}
+							{if $v.label}{$v.label|escape}{else}{$v.value_text|escape}{/if}
+							{if $v.price_modifier > 0}({$v.price_prefix}{$site_currency}{$v.price_modifier|string_format:"%.2f"}){/if}
+						</label>
+						{/foreach}
+					</div>
+
+				{elseif $po.type == 'toggle'}
+					{foreach $po.values as $v}
+					<label style="display:flex;align-items:center;gap:.65rem">
+						<ios-toggle name="options[{$po.id}]" value="{$v.id}"
+						            data-po-id="{$po.id}"
+						            data-price-prefix="{$v.price_prefix}"
+						            data-price-mod="{$v.price_modifier}">
+						</ios-toggle>
+						{if $v.label}{$v.label|escape}{else}{$v.value_text|escape}{/if}
+					</label>
+					{/foreach}
+
+				{elseif $po.type == 'text'}
+					<input type="text" id="opt-{$po.id}" name="options_text[{$po.id}]"
+					       placeholder="{$po.placeholder|escape}"
+					       {if $po.required}required aria-required="true"{/if}
+					       maxlength="512">
+
+				{elseif $po.type == 'textarea'}
+					<textarea id="opt-{$po.id}" name="options_text[{$po.id}]"
+					          placeholder="{$po.placeholder|escape}"
+					          {if $po.required}required aria-required="true"{/if}
+					          rows="3"></textarea>
+
+				{elseif $po.type == 'file'}
+					<input type="file" id="opt-{$po.id}" name="options_file[{$po.id}]"
+					       {if $po.required}required aria-required="true"{/if}>
+
+				{elseif $po.type == 'date'}
+					<input type="date" id="opt-{$po.id}" name="options_text[{$po.id}]"
+					       {if $po.required}required aria-required="true"{/if}>
+
+				{elseif $po.type == 'time'}
+					<input type="time" id="opt-{$po.id}" name="options_text[{$po.id}]"
+					       {if $po.required}required aria-required="true"{/if}>
+
+				{elseif $po.type == 'datetime'}
+					<input type="datetime-local" id="opt-{$po.id}" name="options_text[{$po.id}]"
+					       {if $po.required}required aria-required="true"{/if}>
+				{/if}
+
+			</div>
+			{/foreach}
+		</div>
+		{/if}
+
+		{* ── Add to cart ── *}
+		<div class="add-to-cart-row">
+			<input type="number" class="qty-input" id="qty" value="1" min="1" max="999"
+			       aria-label="Quantity">
+			<button class="btn btn-primary btn-lg" id="btn-add-to-cart"
+			        data-product-id="{$product.id}"
+			        aria-label="Add {$product.name|escape} to cart">
+				Add to Cart
+			</button>
+		</div>
+		<div id="add-to-cart-msg" style="margin-top:.5rem;font-size:.88rem" aria-live="polite"></div>
+
+		{* ── Wish list ── *}
+		<div class="wl-add-wrap" style="margin-top:.85rem">
+			<button class="btn btn-secondary" id="btn-add-to-wl"
+			        data-product-id="{$product.id}"
+			        aria-haspopup="listbox"
+			        aria-expanded="false">
+				&#10084; Add to Wish List
+			</button>
+			<div id="wl-dropdown" class="wl-dropdown" role="listbox" aria-label="Wish lists" style="display:none">
+				<div id="wl-list-items">
+					<div class="wl-loading">Loading…</div>
+				</div>
+				<div class="wl-new">
+					<input type="text" id="wl-new-name" placeholder="New list name…"
+					       aria-label="New wish list name" maxlength="255">
+					<button class="btn btn-primary btn-sm" id="btn-wl-create">Create &amp; Add</button>
+				</div>
+			</div>
+			<div id="wl-msg" style="font-size:.85rem;margin-top:.3rem" aria-live="polite"></div>
+		</div>
+
+	</div>
+</div>
+
+{* ── Description tabs ── *}
+{if $product.description_long || $product.description}
+<div class="product-tabs">
+	<div class="product-tab-btns" role="tablist">
+		<button class="product-tab-btn active" data-tab="description" role="tab"
+		        aria-selected="true" aria-controls="tab-description">Description</button>
+	</div>
+	<div class="product-tab-panel active" id="tab-description" role="tabpanel">
+		{if $product.description_long}
+			{$product.description_long}
+		{elseif $product.description}
+			<p>{$product.description|escape}</p>
+		{/if}
+	</div>
+</div>
+{/if}
+
+{/block}
+
+{block name="scripts"}
+<script>
+{literal}
+(function () {
+'use strict';
+
+// ── Gallery & Lightbox ─────────────────────────────────────────────────────
+const mainImg   = document.getElementById('main-image');
+const gallery   = document.getElementById('gallery-main');
+const thumbs    = document.querySelectorAll('.product-thumb');
+const lightbox  = document.getElementById('product-lightbox');
+const lbImg     = document.getElementById('lightbox-img');
+const lbClose   = document.getElementById('lightbox-close');
+const lbPrev    = document.getElementById('lightbox-prev');
+const lbNext    = document.getElementById('lightbox-next');
+
+// Collect full-size src list from thumbnails (or main image if no thumbs)
+var imageSrcs = [];
+if (thumbs.length) {
+	thumbs.forEach(function(btn) { imageSrcs.push(btn.dataset.src); });
+} else if (mainImg) {
+	imageSrcs = [mainImg.src];
+}
+var lbIndex = 0;
+
+function openLightbox(idx) {
+	lbIndex = idx;
+	lbImg.src = imageSrcs[lbIndex];
+	lightbox.classList.add('open');
+	document.body.style.overflow = 'hidden';
+	updateLbNav();
+	lbClose.focus();
+}
+function closeLightbox() {
+	lightbox.classList.remove('open');
+	document.body.style.overflow = '';
+	lbImg.src = '';
+	if (gallery) gallery.focus();
+}
+function updateLbNav() {
+	if (lbPrev) lbPrev.disabled = lbIndex === 0;
+	if (lbNext) lbNext.disabled = lbIndex === imageSrcs.length - 1;
+}
+
+// Thumbnail swap + track active index
+thumbs.forEach(function(btn, i) {
+	btn.addEventListener('click', function() {
+		if (mainImg) { mainImg.style.opacity = '.5'; mainImg.src = this.dataset.src; mainImg.onload = function() { mainImg.style.opacity = '1'; }; }
+		thumbs.forEach(t => t.classList.remove('active'));
+		this.classList.add('active');
+		lbIndex = i;
+	});
+});
+
+// Open lightbox on main image click
+if (gallery) {
+	gallery.addEventListener('click', function() {
+		if (!imageSrcs.length) return;
+		// Find current active index
+		var active = 0;
+		thumbs.forEach(function(btn, i) { if (btn.classList.contains('active')) active = i; });
+		openLightbox(active);
+	});
+	gallery.addEventListener('keydown', function(e) {
+		if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); gallery.click(); }
+	});
+}
+
+// Lightbox controls
+if (lbClose)   lbClose.addEventListener('click', closeLightbox);
+if (lightbox)  lightbox.addEventListener('click', function(e) { if (e.target === lightbox) closeLightbox(); });
+if (lbPrev)    lbPrev.addEventListener('click', function(e) { e.stopPropagation(); if (lbIndex > 0) { lbIndex--; lbImg.src = imageSrcs[lbIndex]; updateLbNav(); } });
+if (lbNext)    lbNext.addEventListener('click', function(e) { e.stopPropagation(); if (lbIndex < imageSrcs.length-1) { lbIndex++; lbImg.src = imageSrcs[lbIndex]; updateLbNav(); } });
+document.addEventListener('keydown', function(e) {
+	if (!lightbox || !lightbox.classList.contains('open')) return;
+	if (e.key === 'Escape')     closeLightbox();
+	if (e.key === 'ArrowLeft')  lbPrev?.click();
+	if (e.key === 'ArrowRight') lbNext?.click();
+});
+
+// ── Add to cart ────────────────────────────────────────────────────────────
+const addBtn = document.getElementById('btn-add-to-cart');
+const msgEl  = document.getElementById('add-to-cart-msg');
+
+if (addBtn) {
+	debounceBtn(addBtn, async function () {
+		const productId = this.dataset.productId;
+		const qty       = parseInt(document.getElementById('qty')?.value || '1', 10);
+
+		// Collect option selections
+		const options = {};
+		document.querySelectorAll('#product-options [data-po-id]').forEach(function (el) {
+			const poId = el.dataset.poId;
+			if (!poId) return;
+			if (el.tagName === 'SELECT' && el.value) {
+				options[poId] = el.value;
+			} else if (el.type === 'radio' && el.checked) {
+				options[poId] = el.value;
+			} else if (el.tagName === 'IOS-TOGGLE' && el.checked) {
+				options[poId] = el.value;
+			}
+		});
+
+		// Validate required options
+		let valid = true;
+		document.querySelectorAll('.product-option').forEach(function (div) {
+			const poId    = div.dataset.poId;
+			const label   = div.querySelector('label');
+			const isReq   = div.querySelector('[required]') !== null;
+			const hasSel  = div.querySelector('select')?.value ||
+			                div.querySelector('input[type=radio]:checked') ||
+			                div.querySelector('input[type=text]')?.value;
+			if (isReq && !hasSel && !options[poId]) {
+				div.querySelector('select,input,textarea')?.focus();
+				valid = false;
+			}
+		});
+		if (!valid) {
+			msgEl.textContent = 'Please select all required options.';
+			msgEl.style.color = '#dc2626';
+			return;
+		}
+
+		const fd = new FormData();
+		fd.append('action',     'add');
+		fd.append('product_id', productId);
+		fd.append('qty',        qty);
+		for (const [k, v] of Object.entries(options)) {
+			fd.append('options[' + k + ']', v);
+		}
+
+		const res  = await fetch('/?route=cart', { method: 'POST', body: fd });
+		const data = await res.json();
+
+		if (data.ok) {
+			msgEl.textContent = 'Added to cart!';
+			msgEl.style.color = '#16a34a';
+			// Update cart count in header
+			const countEl = document.querySelector('.cart-count');
+			if (data.cart_count > 0) {
+				if (countEl) {
+					countEl.textContent = data.cart_count;
+				} else {
+					const cartLink = document.querySelector('#store-cart-summary a');
+					if (cartLink) {
+						const span = document.createElement('span');
+						span.className = 'cart-count';
+						span.textContent = data.cart_count;
+						cartLink.insertBefore(span, cartLink.firstChild.nextSibling);
+					}
+				}
+			}
+			setTimeout(() => { msgEl.textContent = ''; }, 3000);
+		} else {
+			msgEl.textContent = data.message || 'Could not add to cart.';
+			msgEl.style.color = '#dc2626';
+		}
+	});
+}
+
+// ── Wish list ───────────────────────────────────────────────────────────────
+const wlBtn      = document.getElementById('btn-add-to-wl');
+const wlDropdown = document.getElementById('wl-dropdown');
+const wlMsg      = document.getElementById('wl-msg');
+const productId  = wlBtn?.dataset.productId;
+
+if (wlBtn) {
+	wlBtn.addEventListener('click', async function() {
+		const expanded = wlDropdown.style.display !== 'none';
+		if (expanded) {
+			wlDropdown.style.display = 'none';
+			wlBtn.setAttribute('aria-expanded','false');
+			return;
+		}
+		wlBtn.setAttribute('aria-expanded','true');
+		wlDropdown.style.display = '';
+		// Load lists
+		const fd = new FormData(); fd.append('action','get_lists');
+		const res = await fetch('/?route=wishlist',{method:'POST',body:fd}).then(r=>r.json());
+		const listItems = document.getElementById('wl-list-items');
+		listItems.innerHTML = '';
+		if (res.lists && res.lists.length) {
+			res.lists.forEach(function(l) {
+				const btn = document.createElement('button');
+				btn.className = 'wl-list-btn';
+				btn.setAttribute('role','option');
+				btn.textContent = l.name;
+				btn.addEventListener('click', async function() {
+					await wlAdd(l.token);
+				});
+				listItems.appendChild(btn);
+			});
+		} else {
+			listItems.innerHTML = '<div style="font-size:.82rem;color:var(--c-text-dim);padding:.3rem .5rem">No lists yet</div>';
+		}
+	});
+}
+
+async function wlAdd(token) {
+	wlDropdown.style.display = 'none';
+	wlBtn?.setAttribute('aria-expanded','false');
+	const fd = new FormData();
+	fd.append('action','add'); fd.append('token',token); fd.append('product_id',productId);
+	const res = await fetch('/?route=wishlist',{method:'POST',body:fd}).then(r=>r.json());
+	wlMsg.textContent = res.ok ? '❤ Added to wish list!' : (res.message||'Could not add.');
+	wlMsg.style.color = res.ok ? '#16a34a' : '#dc2626';
+	setTimeout(() => { wlMsg.textContent=''; }, 3000);
+}
+
+document.getElementById('btn-wl-create')?.addEventListener('click', async function() {
+	const name = document.getElementById('wl-new-name')?.value.trim() || 'My Wish List';
+	const fd1 = new FormData(); fd1.append('action','create'); fd1.append('name',name);
+	const res = await fetch('/?route=wishlist',{method:'POST',body:fd1}).then(r=>r.json());
+	if (res.ok) await wlAdd(res.list.token);
+});
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+	if (wlDropdown && !wlDropdown.contains(e.target) && e.target !== wlBtn) {
+		wlDropdown.style.display = 'none';
+		wlBtn?.setAttribute('aria-expanded','false');
+	}
+});
+
+})();
+{/literal}
+</script>
+{/block}

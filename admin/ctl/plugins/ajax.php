@@ -12,7 +12,7 @@ function out(bool $ok, string $message = '', array $extra = []): never {
 	exit;
 }
 
-require DIR_LIB . 'plugin-loader.php';
+require_once DIR_LIB . 'plugin-loader.php';
 
 $action = post('action');
 
@@ -36,15 +36,16 @@ if ($action === 'list') {
 		if (!$manifest) continue;
 
 		$plugins[] = [
-			'code'        => $code,
-			'folder'      => $entry,
-			'enabled'     => !$disabled,
-			'name'        => $manifest['name']        ?: $code,
-			'version'     => $manifest['version']     ?: '—',
-			'author'      => $manifest['author']      ?: '—',
-			'link'        => $manifest['link']        ?: '',
-			'description' => $manifest['description'] ?: '',
-			'date'        => $manifest['date']        ?: '',
+			'code'         => $code,
+			'folder'       => $entry,
+			'enabled'      => !$disabled,
+			'name'         => $manifest['name']        ?: $code,
+			'version'      => $manifest['version']     ?: '—',
+			'author'       => $manifest['author']      ?: '—',
+			'link'         => $manifest['link']        ?: '',
+			'description'  => $manifest['description'] ?: '',
+			'date'         => $manifest['date']        ?: '',
+			'has_settings' => !empty($manifest['settings']),
 		];
 	}
 
@@ -150,7 +151,8 @@ if ($action === 'enable') {
 	$enabled  = DIR_ROOT . 'plugins/'  . $code;
 
 	if (!is_dir($disabled)) out(false, 'Plugin not found.');
-	if (!rename($disabled, $enabled))  out(false, 'Could not enable plugin.');
+	if (is_dir($enabled))   out(false, 'An enabled plugin with this code already exists. Remove the duplicate first.');
+	if (!rename($disabled, $enabled)) out(false, 'Could not enable plugin.');
 
 	out(true, 'Plugin enabled.');
 }

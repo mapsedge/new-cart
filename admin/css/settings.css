@@ -293,3 +293,49 @@ drawer-foot {
 #drawer-overlay.show { display: block; }
 
 .nc-empty { text-align: center; padding: 2rem 1rem; color: var(--nc-text-dim); font-size: .9rem; }
+
+/* ── Options sub-tabs ── */
+.sub-tabs {
+	display: flex;
+	gap: 0;
+	border-bottom: 2px solid var(--nc-border);
+	margin-bottom: 1.25rem;
+}
+.sub-tab {
+	padding: .45rem 1.1rem;
+	font-size: .85rem;
+	font-weight: 600;
+	color: #555;
+	background: none;
+	border: none;
+	border-bottom: 3px solid transparent;
+	margin-bottom: -2px;
+	cursor: pointer;
+	transition: color .15s, border-color .15s;
+}
+.sub-tab:hover  { color: var(--nc-primary); }
+.sub-tab.active { color: var(--nc-primary); border-bottom-color: var(--nc-primary); }
+
+.sub-panel { display: none; }
+.sub-panel.active { display: block; }
+
+/* Vertical stack for settings cards */
+.settings-stack { display: flex; flex-direction: column; gap: .75rem; }
+.settings-stack .df { margin-bottom: 0; }
+
+/* Thumbnail settings grid */
+.img-thumb-grid {
+	display: grid;
+	grid-template-columns: 130px 90px 90px;
+	gap: .45rem .75rem;
+	align-items: center;
+}
+.img-col-head { font-size: .78rem; font-weight: 700; color: var(--nc-text-dim); text-align: center; }
+.img-row-label { font-size: .85rem; font-weight: 600; }
+.img-thumb-grid input[type="number"] { width: 100%; }
+
+/* Gutter between settings cards */
+.settings-stack > .settings-card,
+.sub-panel > .settings-card + .settings-card {
+	margin-top: 1rem;
+}

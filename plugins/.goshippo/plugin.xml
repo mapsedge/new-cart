@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+    <code>goshippo</code>
+    <n>GoShippo Shipping</n>
+    <version>1.0.0</version>
+    <author>Map's Edge Creative</author>
+    <description>Live shipping rates at checkout and label generation via Shippo.</description>
+    <hooks>
+        <hook>catalog.checkout.shipping_rates</hook>
+        <hook>catalog.order.label_generate</hook>
+    </hooks>
+    <settings>
+        <key>shippo_api_key</key>
+        <key>shippo_from_name</key>
+        <key>shippo_from_street1</key>
+        <key>shippo_from_city</key>
+        <key>shippo_from_state</key>
+        <key>shippo_from_zip</key>
+        <key>shippo_from_country</key>
+        <key>shippo_parcel_length</key>
+        <key>shippo_parcel_width</key>
+        <key>shippo_parcel_height</key>
+        <key>shippo_parcel_weight</key>
+        <key>shippo_parcel_distance_unit</key>
+        <key>shippo_parcel_mass_unit</key>
+    </settings>
+</plugin>

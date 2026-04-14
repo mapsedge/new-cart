@@ -1,0 +1,142 @@
+{extends file="layout.html"}
+
+{block name="title"}Cart — {$site_name}{/block}
+
+{block name="content"}
+<div class="page-head">
+	<h1>Your Cart</h1>
+</div>
+
+{if $items}
+<table class="cart-table" id="cart-table">
+	<thead>
+		<tr>
+			<th></th>
+			<th>Product</th>
+			<th>Price</th>
+			<th>Qty</th>
+			<th>Total</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		{foreach $items as $i => $item}
+		<tr data-index="{$i}">
+			<td>
+				{if $item.product.image}
+					<img class="cart-item-img"
+					     src="{$item.product.image|escape}"
+					     alt="{$item.product.name|escape}">
+				{/if}
+			</td>
+			<td>
+				<div class="cart-item-name">
+					<a href="{$url_root}product/{$item.product.slug|escape}">
+						{$item.product.name|escape}
+					</a>
+				</div>
+				{if $item.options}
+				<div class="cart-item-options">
+					{foreach $item.options as $opt}
+						{$opt.option_name|escape}: {if $opt.label}{$opt.label|escape}{else}{$opt.value_text|escape}{/if}<br>
+					{/foreach}
+				</div>
+				{/if}
+			</td>
+			<td>{$site_currency}{$item.unit_price|string_format:"%.2f"}</td>
+			<td>
+				<input class="cart-qty-input" type="number"
+				       value="{$item.qty}" min="1" max="999"
+				       data-index="{$i}" aria-label="Quantity for {$item.product.name|escape}">
+			</td>
+			<td class="line-total">{$site_currency}{$item.line_total|string_format:"%.2f"}</td>
+			<td>
+				<button class="cart-remove-btn" data-index="{$i}"
+				        aria-label="Remove {$item.product.name|escape}">&#10005;</button>
+			</td>
+		</tr>
+		{/foreach}
+	</tbody>
+</table>
+
+<div class="cart-summary">
+	<span class="cart-total-label">Subtotal:</span>
+	<span class="cart-total-value" id="cart-subtotal">{$subtotal}</span>
+	<a class="btn btn-primary btn-lg" href="{$url_root}checkout">Proceed to Checkout</a>
+</div>
+
+{else}
+<div class="empty-state">
+	<div class="empty-state-icon">&#128722;</div>
+	<h2>Your cart is empty</h2>
+	<p>Add some products to get started.</p>
+	<a class="btn btn-primary" href="{$url_root}" style="margin-top:1rem">Continue Shopping</a>
+</div>
+{/if}
+
+{/block}
+
+{block name="scripts"}
+{if $items}
+<script>
+{literal}
+(function () {
+'use strict';
+
+async function cartAjax(data) {
+	const fd = new FormData();
+	for (const [k, v] of Object.entries(data)) fd.append(k, v);
+	const res = await fetch('/?route=cart', { method: 'POST', body: fd });
+	return res.json();
+}
+
+// ── Qty update ─────────────────────────────────────────────────────────────
+let qtyTimer = null;
+document.querySelectorAll('.cart-qty-input').forEach(function (input) {
+	input.addEventListener('change', function () {
+		clearTimeout(qtyTimer);
+		const index = this.dataset.index;
+		const qty   = parseInt(this.value, 10);
+		qtyTimer = setTimeout(async function () {
+			const res = await cartAjax({ action: 'update', index, qty });
+			if (res.ok) {
+				const subtotalEl = document.getElementById('cart-subtotal');
+				if (subtotalEl) subtotalEl.textContent = res.subtotal;
+				updateCartCount(res.count);
+				if (qty <= 0) location.reload();
+			}
+		}, 600);
+	});
+});
+
+// ── Remove ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('.cart-remove-btn').forEach(function (btn) {
+	btn.addEventListener('click', async function () {
+		const index = this.dataset.index;
+		const row   = this.closest('tr');
+		if (row) { row.style.transition = 'opacity .3s'; row.style.opacity = '0'; }
+		const res = await cartAjax({ action: 'remove', index });
+		if (res.ok) {
+			setTimeout(function () {
+				if (row) row.remove();
+				const subtotalEl = document.getElementById('cart-subtotal');
+				if (subtotalEl) subtotalEl.textContent = res.subtotal;
+				updateCartCount(res.count);
+				if (res.count === 0) location.reload();
+			}, 320);
+		} else {
+			if (row) row.style.opacity = '1';
+		}
+	});
+});
+
+function updateCartCount(count) {
+	const el = document.querySelector('.cart-count');
+	if (el) el.textContent = count;
+}
+
+})();
+{/literal}
+</script>
+{/if}
+{/block}

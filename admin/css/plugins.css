@@ -119,3 +119,7 @@
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 .btn-primary  { background: var(--nc-primary); color: #fff; }
 .btn-danger   { background: var(--nc-danger);  color: #fff; }
+
+/* ── Plugin settings button column ── */
+.col-settings { width: 110px; white-space: nowrap; }
+.plugin-settings-btn { font-size: .8rem; }

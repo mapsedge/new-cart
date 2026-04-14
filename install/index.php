@@ -236,12 +236,12 @@ $defaultAdminPath = randomAdminPath();
 					</div>
 					<div class="field">
 						<label>Root Username <span class="req">*</span></label>
-						<input type="text" id="db_root" value="root" autocomplete="off">
+						<input type="text" id="db_root" value="root" >
 					</div>
 				</div>
 				<div class="field">
 					<label>Root Password <span class="req">*</span></label>
-					<input type="password" id="db_rootpw" autocomplete="off">
+					<input  id="db_rootpw" >
 					<div class="hint">Used only during installation — never saved.</div>
 				</div>
 				<div class="btn-row" style="margin-top:.85rem">
@@ -280,12 +280,12 @@ $defaultAdminPath = randomAdminPath();
 				<div class="field-row">
 					<div class="field">
 						<label>Username <span class="req">*</span></label>
-						<input type="text" id="db_user" autocomplete="off">
+						<input type="text" id="db_user" >
 						<div class="hint">e.g. <code>new_cart</code></div>
 					</div>
 					<div class="field">
 						<label>Password <span class="req">*</span></label>
-						<input type="password" id="db_pass" autocomplete="new-password">
+						<input  id="db_pass" >
 					</div>
 				</div>
 				<div class="field">
@@ -313,22 +313,22 @@ $defaultAdminPath = randomAdminPath();
 			<div class="field-row">
 				<div class="field">
 					<label>Username <span class="req">*</span></label>
-					<input type="text" id="admin_user" autocomplete="off">
+					<input type="text" id="admin_user" >
 					<div class="hint">Minimum 3 characters</div>
 				</div>
 				<div class="field">
 					<label>Email <span class="req">*</span></label>
-					<input type="email" id="admin_email" autocomplete="off">
+					<input type="email" id="admin_email" >
 				</div>
 			</div>
 			<div class="field">
 				<label>Password <span class="req">*</span></label>
-				<input type="password" id="admin_pass" autocomplete="new-password">
+				<input  id="admin_pass" >
 				<div class="hint">Minimum 8 characters.</div>
 			</div>
 			<div class="field">
 				<label>Confirm Password <span class="req">*</span></label>
-				<input type="password" id="admin_confirm" autocomplete="new-password">
+				<input  id="admin_confirm" >
 				<div id="pw-match-msg"></div>
 			</div>
 			<div class="btn-row">

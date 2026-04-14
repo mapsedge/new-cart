@@ -6,6 +6,8 @@
 	const URL_ROOT = NC.rootUrl;
 
 	const STATUS_LABELS = { '0': 'Not Active', '1': 'Active', '2': 'Browse Only' };
+
+
 	const STATUS_CLASS  = { '0': 'status-0',   '1': 'status-1',  '2': 'status-2' };
 
 	const tbody    = document.getElementById('cat-tbody');
@@ -110,18 +112,48 @@
 		// Init Trumbowyg after drawer is visible
 		setTimeout(function () {
 			if (!window._trumbInitDone && window.jQuery && jQuery.fn.trumbowyg) {
+				
 				jQuery('#cat-html-long').trumbowyg({
 					svgPath: '/js/vendor/trumbowyg/src/ui/icons.svg',
 					btns: [
 						['bold', 'italic', 'underline'],
 						['link'],
-						['insertImage'],
 						['unorderedList', 'orderedList'],
 						['indent', 'outdent'],
 						['viewHTML']
 					]
 				});
 				window._trumbInitDone = true;
+				// Append plain FM image button to toolbar
+				setTimeout(function() {
+					var $ta = jQuery('#cat-html-long');
+					if (!window.openFilePicker) return;
+					var toolbar = $ta.closest('.trumbowyg-box')[0]
+						? $ta.closest('.trumbowyg-box')[0].querySelector('.trumbowyg-button-pane')
+						: null;
+					if (!toolbar || toolbar.querySelector('.nc-fm-img-btn')) return;
+					var fmBtn = document.createElement('button');
+					fmBtn.type = 'button';
+					fmBtn.className = 'nc-fm-img-btn';
+					fmBtn.style.cssText = 'padding:2px 6px;cursor:pointer;border:none;background:none;font-size:14px;line-height:32px;height:35px;color:var(--nc-text,#333)';
+					fmBtn.title = 'Insert Image';
+					fmBtn.setAttribute('aria-label', 'Insert image from file manager');
+					fmBtn.textContent = '🖼';
+					fmBtn.addEventListener('mousedown', function(e) { e.preventDefault(); });
+					fmBtn.addEventListener('click', function(e) {
+						e.preventDefault();
+						openFilePicker(function(items) {
+							if (!items.length) return;
+							var ed = $ta.closest('.trumbowyg-box')[0]
+								? $ta.closest('.trumbowyg-box')[0].querySelector('.trumbowyg-editor')
+								: null;
+							if (ed) ed.focus();
+							var img = '<img src="' + items[0].url + '" alt="" style="max-width:100%">';
+					$ta.trumbowyg('execCmd', { cmd: 'insertHTML', param: img, forceCss: false });
+						});
+					});
+					toolbar.appendChild(fmBtn);
+				}, 0);
 			}
 		}, 50);
 	}
@@ -132,9 +164,11 @@
 	}
 
 	function resetDrawer() {
-		document.getElementById('cat-id').value   = '';
-		document.getElementById('cat-name').value = '';
-		document.getElementById('cat-seo').value  = '';
+		document.getElementById('cat-id').value              = '';
+		document.getElementById('cat-name').value            = '';
+		document.getElementById('cat-seo').value             = '';
+		document.getElementById('cat-seo-keywords').value    = '';
+		document.getElementById('cat-seo-description').value = '';
 		if (window._trumbInitDone) jQuery('#cat-html-long').trumbowyg('html', '');
 		else document.getElementById('cat-html-long').value = '';
 		const rs = document.getElementById('cat-status');
@@ -197,10 +231,12 @@
 		const d = res.row;
 
 		await populateParents(d.id);
-		document.getElementById('cat-id').value     = d.id;
-		document.getElementById('cat-name').value   = d.name;
-		document.getElementById('cat-seo').value    = d.seo_title || '';
-		document.getElementById('cat-parent').value = d.parent_id || 0;
+		document.getElementById('cat-id').value              = d.id;
+		document.getElementById('cat-name').value            = d.name;
+		document.getElementById('cat-seo').value             = d.seo_title || '';
+		document.getElementById('cat-seo-keywords').value    = d.seo_keywords || '';
+		document.getElementById('cat-seo-description').value = d.seo_description || '';
+		document.getElementById('cat-parent').value          = d.parent_id || 0;
 		seoTitleDirty = !!(d.seo_title && d.seo_title.trim());
 
 		if (window._trumbInitDone) jQuery('#cat-html-long').trumbowyg('html', d.html_long || '');
@@ -215,7 +251,7 @@
 	});
 
 	// ── Save ──────────────────────────────────────────────────────────────────
-	document.getElementById('btn-drawer-save').addEventListener('click', async function () {
+	debounceBtn(document.getElementById('btn-drawer-save'), async function () {
 		const nameEl = document.getElementById('cat-name');
 		if (!nameEl.reportValidity()) return;
 		const name = nameEl.value.trim();
@@ -227,18 +263,18 @@
 		const rs = document.getElementById('cat-status');
 		const ft = document.getElementById('cat-featured');
 
-		this.disabled = true;
 		const res = await ajax({
-			action:    'save',
-			id:        document.getElementById('cat-id').value,
-			name:      name,
-			parent_id: document.getElementById('cat-parent').value,
-			seo_title: document.getElementById('cat-seo').value,
-			html_long: htmlLong,
-			status:    rs ? rs.value : '1',
-			featured:  ft ? (ft.checked ? 1 : 0) : 0,
+			action:          'save',
+			id:              document.getElementById('cat-id').value,
+			name:            name,
+			parent_id:       document.getElementById('cat-parent').value,
+			seo_title:       document.getElementById('cat-seo').value,
+			seo_keywords:    document.getElementById('cat-seo-keywords').value,
+			seo_description: document.getElementById('cat-seo-description').value,
+			html_long:       htmlLong,
+			status:          rs ? rs.value : '1',
+			featured:        ft ? (ft.checked ? 1 : 0) : 0,
 		});
-		this.disabled = false;
 
 		if (!res.ok) { notifyErr(res.message); return; }
 		notifyOk(res.message);
@@ -247,6 +283,15 @@
 		if (res.cleared_reminder && NC.incompleteCats) {
 			const idx = NC.incompleteCats.indexOf(parseInt(res.cleared_reminder));
 			if (idx !== -1) NC.incompleteCats.splice(idx, 1);
+			// Fade out and remove the reminder banner for this category
+			const banner = document.querySelector(
+				'.reminder-banner[data-entity="category"][data-entity-id="' + res.cleared_reminder + '"]'
+			);
+			if (banner) {
+				banner.style.transition = 'opacity .4s';
+				banner.style.opacity = '0';
+				setTimeout(() => banner.remove(), 420);
+			}
 		}
 
 		updateRow(res.row);
@@ -324,12 +369,10 @@
 		btnBulk.textContent = n > 0 ? 'Delete Selected (' + n + ')' : 'Delete Selected';
 	}
 
-	btnBulk.addEventListener('click', async function () {
+	debounceBtn(btnBulk, async function () {
 		const ids = Array.from(tbody.querySelectorAll('.row-chk:checked')).map(function (c) { return c.dataset.id; });
 		if (!ids.length) return;
-		this.disabled = true;
 		const res = await ajax({ action: 'bulk_delete', ids: JSON.stringify(ids) });
-		this.disabled = false;
 		if (!res.ok) { notifyErr(res.message); return; }
 		ids.forEach(function (id) {
 			const tr = tbody.querySelector('tr[data-id="' + id + '"]');
@@ -404,5 +447,99 @@
 	}
 
 	loadCategories();
+
+	// ── Drawer scroll indicator ───────────────────────────────────────────────
+	(function () {
+		const drawerContent = document.getElementById('cat-drawer-content');
+		const indicator     = document.getElementById('cat-scroll-indicator');
+		const descTA        = document.getElementById('cat-html-long');
+		if (!drawerContent || !indicator) return;
+
+		function checkOverflow() {
+			const overflows = drawerContent.scrollHeight > drawerContent.clientHeight + 10;
+			const atBottom  = drawerContent.scrollTop + drawerContent.clientHeight >= drawerContent.scrollHeight - 20;
+			indicator.classList.toggle('hidden', !overflows || atBottom);
+		}
+
+		// Observe drawer open (class change on me-drawer)
+		const drawerEl = document.getElementById('cat-drawer');
+		if (drawerEl && window.MutationObserver) {
+			new MutationObserver(checkOverflow).observe(drawerEl, { attributes: true, attributeFilter: ['class'] });
+		}
+		drawerContent.addEventListener('scroll', checkOverflow);
+		descTA?.addEventListener('focus', () => indicator.classList.add('hidden'));
+		window.addEventListener('resize', checkOverflow);
+	}());
+
+	// ── AI integration ────────────────────────────────────────────────────────
+	async function aiGenerate(prompt) {
+		const key = (NC.deepaiKey || '').trim();
+		if (!key) {
+			notifyErr('DeepAI API key not set. Add it in Settings → Options.');
+			return null;
+		}
+		const fd = new FormData();
+		fd.append('text', prompt);
+		const res = await fetch('https://api.deepai.org/api/text-generator', {
+			method: 'POST',
+			headers: { 'api-key': key },
+			body: fd,
+		});
+		const data = await res.json();
+		if (data.err) { notifyErr('AI error: ' + data.err); return null; }
+		return (data.output || '').trim();
+	}
+
+	document.getElementById('btn-cat-ai-desc')?.addEventListener('click', async function () {
+		const name = document.getElementById('cat-name').value.trim();
+		if (!name) { notifyErr('Enter a category name first.'); return; }
+		this.textContent = '✨ Generating…';
+		const result = await aiGenerate(
+			'Write a short, engaging HTML product category description (2-3 sentences, no heading) for a category called "' + name + '".'
+		);
+		this.textContent = '✨ AI';
+		if (!result) return;
+		if (window._trumbInitDone) jQuery('#cat-html-long').trumbowyg('html', result);
+		else document.getElementById('cat-html-long').value = result;
+	});
+
+	document.getElementById('btn-cat-ai-seo')?.addEventListener('click', async function () {
+		const name = document.getElementById('cat-name').value.trim();
+		if (!name) { notifyErr('Enter a category name first.'); return; }
+		this.textContent = '✨ Generating…';
+		const result = await aiGenerate(
+			'For a product category named "' + name + '", provide ONLY a JSON object (no markdown, no explanation) with these fields: ' +
+			'seo_title (concise page title under 70 chars), ' +
+			'seo_keywords (comma-separated keywords, max 150 chars), ' +
+			'seo_description (meta description under 160 chars).'
+		);
+		this.textContent = '✨ Generate SEO';
+		if (!result) return;
+		try {
+			const clean = result.replace(/```json|```/g, '').trim();
+			const obj   = JSON.parse(clean);
+			if (obj.seo_title)       document.getElementById('cat-seo').value             = obj.seo_title;
+			if (obj.seo_keywords)    document.getElementById('cat-seo-keywords').value    = obj.seo_keywords;
+			if (obj.seo_description) document.getElementById('cat-seo-description').value = obj.seo_description;
+		} catch (e) {
+			notifyErr('AI returned unexpected format. Try again.');
+		}
+	});
+
+	// ── Description image picker ──────────────────────────────────────────────
+	document.getElementById('btn-cat-insert-image')?.addEventListener('click', function () {
+		if (!window.openFilePicker) { notifyErr('File manager not loaded.'); return; }
+		window.openFilePicker(function (items) {
+			if (!items.length) return;
+			const img = '<img src="' + items[0].url + '" alt="">';
+			if (window._trumbInitDone) {
+				jQuery('#cat-html-long').trumbowyg('execCmd', { cmd: 'insertHTML', param: img, forceCss: false });
+			} else {
+				const ta = document.getElementById('cat-html-long');
+				const pos = ta.selectionStart;
+				ta.value = ta.value.slice(0, pos) + img + ta.value.slice(pos);
+			}
+		});
+	});
 
 })();

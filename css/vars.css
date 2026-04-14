@@ -1,0 +1,63 @@
+/**
+ * new-cart — CSS custom properties (shared)
+ * Single source of truth. Loaded by both admin and catalog layouts.
+ * Never repeat a value elsewhere.
+ */
+
+:root {
+	/* ── Brand ── */
+	--nc-primary:        #2563eb;
+	--nc-primary-hover:  #1d4ed8;
+	--nc-primary-muted:  #eff6ff;
+	--nc-success:        #16a34a;
+	--nc-danger:         #dc2626;
+	--nc-warning:        #d97706;
+
+	/* ── Text ── */
+	--nc-text:           #1a1a1a;
+	--nc-text-secondary: #444444;
+	--nc-text-dim:       #555555;
+
+	/* ── Backgrounds ── */
+	--nc-bg:             #ffffff;
+	--nc-bg-alt:         #f8f9fa;
+	--nc-bg-page:        #f0f2f5;
+	--nc-surface:        #ffffff;
+	--nc-hover:          #f3f4f6;
+
+	/* ── Borders ── */
+	--nc-border:         #9ca3af;
+	--nc-border-light:   #e5e7eb;
+	--nc-border-focus:   #2563eb;
+
+	/* ── Toggle ── */
+	--nc-track-off:      #c7c7cc;
+	--nc-thumb:          #00CF00;
+
+	/* ── Sidebar (admin) ── */
+	--nc-sidebar-bg:     #1e2a38;
+	--nc-sidebar-hover:  #2c3e50;
+	--nc-sidebar-active: #2563eb;
+	--nc-sidebar-text:   #c8d0da;
+	--nc-sidebar-dim:    #7a8a9a;
+
+	/* ── Topbar (admin) ── */
+	--nc-topbar-bg:      #2c3e50;
+	--nc-topbar-text:    #ffffff;
+
+	/* ── Sizing ── */
+	--nc-sidebar-w:            220px;
+	--nc-sidebar-w-collapsed:   48px;
+	--nc-topbar-h:              52px;
+	--nc-radius:                .375rem;
+	--nc-radius-sm:             .25rem;
+	--nc-radius-lg:             .5rem;
+
+	/* ── Font ── */
+	--nc-font: Helvetica, 'Open Sans', sans-serif;
+
+	/* ── Shadows ── */
+	--nc-box-shadow:     3px 3px 6px rgba(0,0,0,.5);
+	--nc-box-shadow-med: 6px 6px 12px rgba(0,0,0,.5);
+	--nc-box-shadow-far: 10px 10px 20px rgba(0,0,0,.5);
+}

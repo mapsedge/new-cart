@@ -56,6 +56,18 @@
 		if (hidden) hidden.value = on ? 1 : 0;
 	}
 	function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
+	function getBool(id) {
+		const el = document.getElementById(id);
+		if (!el) return false;
+		if (typeof el.checked === 'boolean') return el.checked;
+		return el.getAttribute('checked') !== null;
+	}
+	function setBool(id, v) {
+		const el = document.getElementById(id);
+		if (!el) return;
+		if (v) { el.setAttribute('checked', ''); el.checked = true; }
+		else   { el.removeAttribute('checked'); el.checked = false; }
+	}
 
 	// ── Tab error indicator ───────────────────────────────────────────────────
 	function tabError(tabName, on) {
@@ -74,6 +86,18 @@
 			document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
 			this.classList.add('active');
 			document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+		});
+	});
+
+	// ── Options sub-tabs ──────────────────────────────────────────────────────
+	document.querySelectorAll('.sub-tab').forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			const parent = this.closest('.tab-panel');
+			parent.querySelectorAll('.sub-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+			parent.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+			this.classList.add('active');
+			this.setAttribute('aria-selected', 'true');
+			parent.querySelector('#sub-' + this.dataset.sub).classList.add('active');
 		});
 	});
 
@@ -206,6 +230,20 @@
 
 		setVal('s_site_name',               s.site_name               || '');
 		setVal('s_site_email',              s.site_email              || '');
+		setVal('s_store_phone',             s.store_phone             || '');
+		setVal('s_store_logo_url',          s.store_logo_url          || '');
+		setTog('s_img_retain_names',        s.img_retain_names        || 0);
+		setTog('s_img_resize_on_upload',    s.img_resize_on_upload !== undefined ? s.img_resize_on_upload : 1);
+		setVal('s_img_orig_max',            s.img_orig_max            || '600');
+		setVal('s_img_admin_size',          s.img_admin_size          || '160');
+		setVal('s_img_admin_quality',       s.img_admin_quality       || '75');
+		setVal('s_img_fm_size',             s.img_fm_size             || '50');
+		setVal('s_img_fm_quality',          s.img_fm_quality          || '60');
+		setVal('s_img_product_width',       s.img_product_width       || '600');
+		setVal('s_img_product_quality',     s.img_product_quality     || '80');
+		// Load robots.txt content separately
+		const robotsEl = document.getElementById('s_robots_txt');
+		if (robotsEl && res.robots_txt !== undefined) robotsEl.value = res.robots_txt;
 		setVal('s_site_currency',           s.site_currency           || '$');
 		setVal('s_seo_title_default',       s.seo_title_default       || '');
 		setVal('s_seo_description_default', s.seo_description_default || '');
@@ -236,15 +274,44 @@
 		setTog('s_display_errors',    s.display_errors    || 0);
 		setTog('s_log_errors',        s.log_errors !== undefined ? s.log_errors : 1);
 
+		// Options tab
+		setVal('s_img_orig_max',      s.img_orig_max      || '600');
+		setVal('s_img_admin_size',    s.img_admin_size    || '160');
+		setVal('s_img_admin_quality', s.img_admin_quality || '75');
+		setVal('s_img_fm_size',       s.img_fm_size       || '50');
+		setVal('s_img_fm_quality',    s.img_fm_quality    || '60');
+		setVal('s_deepai_key',        s.deepai_key        || '');
+		// Stripe
+		setVal('s_stripe_mode',                  s.stripe_mode                  || 'test');
+		setVal('s_stripe_test_publishable_key',  s.stripe_test_publishable_key  || '');
+		setVal('s_stripe_test_secret_key',       s.stripe_test_secret_key       || '');
+		setVal('s_stripe_test_webhook_secret',   s.stripe_test_webhook_secret   || '');
+		setVal('s_stripe_publishable_key',       s.stripe_publishable_key       || '');
+		setVal('s_stripe_secret_key',            s.stripe_secret_key            || '');
+		setVal('s_stripe_webhook_secret',        s.stripe_webhook_secret        || '');
+		// GoShippo
+		setVal('s_shippo_api_key',              s.shippo_api_key              || '');
+		setVal('s_shippo_from_name',            s.shippo_from_name            || '');
+		setVal('s_shippo_from_street1',         s.shippo_from_street1         || '');
+		setVal('s_shippo_from_city',            s.shippo_from_city            || '');
+		setVal('s_shippo_from_state',           s.shippo_from_state           || '');
+		setVal('s_shippo_from_zip',             s.shippo_from_zip             || '');
+		setVal('s_shippo_from_country',         s.shippo_from_country         || 'US');
+		setVal('s_shippo_parcel_length',        s.shippo_parcel_length        || '10');
+		setVal('s_shippo_parcel_width',         s.shippo_parcel_width         || '8');
+		setVal('s_shippo_parcel_height',        s.shippo_parcel_height        || '4');
+		setVal('s_shippo_parcel_distance_unit', s.shippo_parcel_distance_unit || 'in');
+		setVal('s_shippo_parcel_weight',        s.shippo_parcel_weight        || '2');
+		setVal('s_shippo_parcel_mass_unit',     s.shippo_parcel_mass_unit     || 'lb');
+
 		setVal('error-log', res.log_content || '');
 		renderUsers(res.users || []);
 	}
 
 	// ── One Save button for all tabs ──────────────────────────────────────────
-	document.getElementById('btn-save-all').addEventListener('click', async function () {
+	debounceBtn(document.getElementById('btn-save-all'), async function () {
 		const saveBtn = this;
 		const statusEl = document.getElementById('save-status');
-		saveBtn.disabled = true;
 		statusEl.textContent = 'Saving…';
 		clearTabErrors();
 
@@ -261,7 +328,6 @@
 		}
 
 		if (errors.length) {
-			saveBtn.disabled = false;
 			statusEl.textContent = '';
 			errors.forEach(notifyErr);
 			// Switch to first tab with error
@@ -276,6 +342,17 @@
 			// Store
 			site_name:               val('s_site_name'),
 			site_email:              val('s_site_email'),
+			store_phone:             val('s_store_phone'),
+			store_logo_url:          val('s_store_logo_url'),
+			img_retain_names:        tog('s_img_retain_names'),
+			img_resize_on_upload:    tog('s_img_resize_on_upload'),
+			img_orig_max:            val('s_img_orig_max'),
+			img_admin_size:          val('s_img_admin_size'),
+			img_admin_quality:       val('s_img_admin_quality'),
+			img_fm_size:             val('s_img_fm_size'),
+			img_fm_quality:          val('s_img_fm_quality'),
+			img_product_width:       val('s_img_product_width'),
+			img_product_quality:     val('s_img_product_quality'),
 			site_currency:           val('s_site_currency'),
 			seo_title_default:       val('s_seo_title_default'),
 			seo_description_default: val('s_seo_description_default'),
@@ -302,12 +379,42 @@
 			pw_require_symbol:       tog('s_pw_require_symbol'),
 			display_errors:          tog('s_display_errors'),
 			log_errors:              tog('s_log_errors'),
+			// Options
+			img_orig_max:            val('s_img_orig_max'),
+			img_admin_size:          val('s_img_admin_size'),
+			img_admin_quality:       val('s_img_admin_quality'),
+			img_fm_size:             val('s_img_fm_size'),
+			img_fm_quality:          val('s_img_fm_quality'),
+			deepai_key:              val('s_deepai_key'),
+			// Stripe
+			stripe_mode:                 val('s_stripe_mode'),
+			stripe_test_publishable_key: val('s_stripe_test_publishable_key'),
+			stripe_test_secret_key:      val('s_stripe_test_secret_key'),
+			stripe_test_webhook_secret:  val('s_stripe_test_webhook_secret'),
+			stripe_publishable_key:      val('s_stripe_publishable_key'),
+			stripe_secret_key:           val('s_stripe_secret_key'),
+			stripe_webhook_secret:       val('s_stripe_webhook_secret'),
+			// GoShippo
+			shippo_api_key:              val('s_shippo_api_key'),
+			shippo_from_name:            val('s_shippo_from_name'),
+			shippo_from_street1:         val('s_shippo_from_street1'),
+			shippo_from_city:            val('s_shippo_from_city'),
+			shippo_from_state:           val('s_shippo_from_state'),
+			shippo_from_zip:             val('s_shippo_from_zip'),
+			shippo_from_country:         val('s_shippo_from_country'),
+			shippo_parcel_length:        val('s_shippo_parcel_length'),
+			shippo_parcel_width:         val('s_shippo_parcel_width'),
+			shippo_parcel_height:        val('s_shippo_parcel_height'),
+			shippo_parcel_distance_unit: val('s_shippo_parcel_distance_unit'),
+			shippo_parcel_weight:        val('s_shippo_parcel_weight'),
+			shippo_parcel_mass_unit:     val('s_shippo_parcel_mass_unit'),
+			wishlist_guest_days:         val('s_wishlist_guest_days'),
+			robots_txt:                  document.getElementById('s_robots_txt')?.value ?? '',
 		}, {
 			logo:    document.getElementById('input-logo')?.files[0],
 			favicon: document.getElementById('input-favicon')?.files[0],
 		});
 
-		saveBtn.disabled = false;
 		statusEl.textContent = '';
 
 		if (!res.ok) {
@@ -320,14 +427,15 @@
 			if (topbar) topbar.textContent = res.site_name;
 		}
 
+		localStorage.removeItem('fm_thumb_size');
+		// Wishlist
+		setVal('s_wishlist_guest_days', s.wishlist_guest_days || '14');
 		notifyOk(res.message);
 	});
 
 	// ── Error log ─────────────────────────────────────────────────────────────
 	document.getElementById('btn-clear-log').addEventListener('click', async function () {
-		this.disabled = true;
 		const res = await ajax({ action: 'clear_log' });
-		this.disabled = false;
 		if (!res.ok) { notifyErr(res.message); return; }
 		setVal('error-log', '');
 		notifyOk(res.message);
@@ -455,7 +563,6 @@
 
 		const id = val('u_id');
 
-		this.disabled = true;
 		const res = await ajaxForm({
 			action:        'save_user',
 			id:            id,
@@ -467,7 +574,6 @@
 			delete_avatar: pendingAvatarDelete ? 1 : 0,
 		}, pendingAvatarFile ? { avatar: pendingAvatarFile } : null);
 
-		this.disabled = false; // ALWAYS re-enable
 
 		if (!res.ok) { notifyErr(res.message); return; }
 		notifyOk(res.message);
@@ -525,8 +631,47 @@
 	});
 
 	function esc(str) {
-		return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+		return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 	}
+
+	// ── Navigate to hash target on load (e.g. #sub-integrations) ─────────────
+	(function () {
+		const hash = window.location.hash;
+		if (!hash) return;
+		const subId = hash.replace('#', '');
+		const panel = document.getElementById(subId);
+		if (!panel || !panel.classList.contains('sub-panel')) return;
+
+		// Activate the Options main tab first
+		document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+		document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+		const optTab   = document.querySelector('.settings-tab[data-tab="options"]');
+		const optPanel = document.getElementById('tab-options');
+		if (optTab)   optTab.classList.add('active');
+		if (optPanel) optPanel.classList.add('active');
+
+		// Activate the sub-tab
+		const parent = panel.closest('.tab-panel');
+		if (parent) {
+			parent.querySelectorAll('.sub-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+			parent.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+			const subBtn = parent.querySelector('.sub-tab[data-sub="' + subId.replace('sub-', '') + '"]');
+			if (subBtn) { subBtn.classList.add('active'); subBtn.setAttribute('aria-selected', 'true'); }
+			panel.classList.add('active');
+		}
+
+		// Scroll into view
+		setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+	}());
+
+	// ── Logo file picker ──────────────────────────────────────────────────────
+	document.getElementById('btn-logo-pick')?.addEventListener('click', function() {
+		if (!window.openFilePicker) return;
+		openFilePicker(function(items) {
+			if (!items.length) return;
+			document.getElementById('s_store_logo_url').value = items[0].url;
+		});
+	});
 
 	load();
 

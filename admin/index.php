@@ -51,11 +51,20 @@ $smarty->setTemplateDir($tpl_dirs);
 $smarty->setCompileDir(DIR_CACHE . 'tpl/admin/');
 $smarty->setCacheDir(DIR_CACHE . 'smarty/admin/');
 $smarty->force_compile = SMARTY_FORCE_COMPILE;
+
+	// Cache bust on deploy
+	$rebuild_flag = DIR_CACHE . '.rebuild';
+	if (file_exists($rebuild_flag)) {
+		array_map('unlink', glob(DIR_CACHE . 'tpl/admin/*.php'));
+		array_map('unlink', glob(DIR_CACHE . 'smarty/admin/*.php'));
+		@unlink($rebuild_flag);
+	}
 $smarty->caching       = SMARTY_CACHING;
 
 $smarty->assign('site_name',   $_nc_site_name);
 $smarty->assign('url_root',    URL_ROOT);
 $smarty->assign('url_admin',   URL_ADMIN);
+$smarty->assign('url_admin_real', URL_ADMIN_REAL);
 $smarty->assign('flash',       flash_get());
 $smarty->assign('admin_user',  $_SESSION['admin_username'] ?? '');
 $smarty->assign('admin_avatar',$_SESSION['admin_avatar']   ?? '');
@@ -79,7 +88,14 @@ if (!file_exists($ctl_file)) {
 }
 
 if (!file_exists($ctl_file)) {
-	$ctl_file = DIR_ADMIN . 'ctl/404.php';
+	// Try plugin admin routes: "goshippo/label" → plugins/.goshippo/admin/label.php
+	$parts      = explode('/', $route, 2);
+	$plugin_ctl = DIR_ROOT . 'plugins/.' . ($parts[0] ?? '') . '/admin/' . ($parts[1] ?? 'index') . '.php';
+	if (file_exists($plugin_ctl)) {
+		$ctl_file = $plugin_ctl;
+	} else {
+		$ctl_file = DIR_ADMIN . 'ctl/404.php';
+	}
 }
 
 require $ctl_file;

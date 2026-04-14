@@ -4,109 +4,257 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>{block name="title"}{$site_name}{/block}</title>
-	<link rel="stylesheet" href="/css/main.css">
+	{if isset($meta_description) && $meta_description}<meta name="description" content="{$meta_description|escape}">{/if}
+	{if isset($meta_keywords) && $meta_keywords}<meta name="keywords" content="{$meta_keywords|escape}">{/if}
+	<link rel="stylesheet" href="/css/vars.css">
+	<link rel="stylesheet" href="/css/catalog.css">
 	<link rel="stylesheet" href="/usermods/css/store.css">
 	<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
 	{block name="head"}{/block}
 </head>
 <body>
 
-{* ── Masthead ──────────────────────────────────────────────────────────────── *}
+{* ── Sticky utility bar ──────────────────────────────────────────────────── *}
+<div id="utility-bar" role="navigation" aria-label="Utility navigation">
+	<div class="utility-bar-inner">
+		<a href="{$url_root}" id="mini-logo" aria-label="{$site_name} home" style="display:none">
+			{if $store_logo_url}
+			<img src="{$store_logo_url|escape}" alt="{$site_name|escape}" title="{$site_name|escape}"
+			     style="max-height:28px;width:auto;display:block">
+			{else}
+			<span class="mini-logo-text">{$site_name}</span>
+			{/if}
+		</a>
+		<div class="utility-bar-right">
+			{if $store_phone}
+			<span class="utility-phone">&#128222; {$store_phone|escape}</span>
+			{/if}
+			{if $is_logged_in}
+			<a href="{$url_root}account">My Account</a>
+			{else}
+			<a href="{$url_root}?route=login">My Account</a>
+			{/if}
+			<a href="{$url_root}wishlist">Wish List
+				{if $wl_count > 0}<span class="utility-badge">{$wl_count}</span>{/if}
+			</a>
+		</div>
+	</div>
+</div>
+
+{* ── Masthead (scrolls with page) ───────────────────────────────────────── *}
 <header id="masthead">
-	<div id="store-logo">
-		<a href="{$url_root}">{$site_name}</a>
-	</div>
-	<div id="store-search">
-		<form action="{$url_root}" method="get">
-			<input type="hidden" name="route" value="search">
-			<input type="text" name="q" placeholder="Search..." value="{$q|default:''}">
-			<button type="submit">Go</button>
-		</form>
-	</div>
-	<div id="store-cart-summary">
-		<a href="{$url_root}?route=cart">
-			Cart: {$cart_qty|default:0} item(s) — {$site_currency}{$cart_total|default:'0.00'}
+	<div class="masthead-inner">
+		{* Hamburger (mobile) *}
+		<button id="nav-hamburger" aria-label="Open navigation" aria-expanded="false" aria-controls="mobile-nav">
+			<span class="ham-line"></span><span class="ham-line"></span><span class="ham-line"></span>
+		</button>
+
+		{* Logo — observed for mini-logo trigger *}
+		<div id="store-logo">
+			<a href="{$url_root}" aria-label="{$site_name} home">
+				{if $store_logo_url}
+				<img src="{$store_logo_url|escape}" alt="{$site_name|escape}" id="logo-img">
+				{else}
+				<span class="logo-text">{$site_name}</span>
+				{/if}
+			</a>
+		</div>
+
+		{* Search *}
+		<div id="store-search">
+			<form action="{$url_root}" method="get" role="search">
+				<input type="hidden" name="route" value="search">
+				<input type="text" name="q" placeholder="Search…"
+				       value="{$q|default:''|escape}" aria-label="Search products">
+				<button type="submit" class="btn btn-primary btn-sm" aria-label="Search">Go</button>
+			</form>
+		</div>
+
+		{* Cart *}
+		<a href="{$url_root}cart" id="store-cart" aria-label="Cart{if $cart_count > 0}, {$cart_count} item(s){/if}">
+			<span class="cart-icon">&#128722;</span>
+			<span class="cart-label">
+				Cart:
+				{if $cart_count > 0}
+				<span class="cart-count">{$cart_count} item{if $cart_count > 1}s{/if}</span>
+				— {$site_currency}{$cart_subtotal|string_format:"%.2f"}
+				{else}
+				0 Items — {$site_currency}0.00
+				{/if}
+			</span>
 		</a>
 	</div>
 </header>
 
-{* ── Top navigation ────────────────────────────────────────────────────────── *}
-<nav id="top-nav">
-	<ul>
-		<li><a href="{$url_root}">Home</a></li>
-		<li><a href="{$url_root}?route=contact">Contact</a></li>
-		{if $is_logged_in}
-		<li><a href="{$url_root}?route=account">Account</a></li>
-		<li><a href="{$url_root}?route=account/logout">Log Out</a></li>
-		{else}
-		<li><a href="{$url_root}?route=account/login">Log In</a></li>
+{* ── Menu 1 — horizontal nav ────────────────────────────────────────────── *}
+{if isset($menu1) && $menu1}
+<nav id="menu1" aria-label="Main navigation">
+	<div class="menu1-inner">
+		{foreach $menu1 as $item}
+		{if $item.enabled}
+		<div class="menu1-item{if $item.submenu_id} has-dropdown{/if}">
+			<a href="{if $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}
+			         {elseif $item.item_type === 'category' && $item.category_slug}{$url_root}category/{$item.category_slug|escape}
+			         {else}{$item.url|default:'#'|escape}{/if}"
+			   {if $item.submenu_id}aria-haspopup="true" aria-expanded="false"{/if}>
+				{$item.label|escape}
+				{if $item.submenu_id}<span class="menu1-arrow" aria-hidden="true">&#9660;</span>{/if}
+			</a>
+			{if $item.submenu_id && isset($item.submenu_items)}
+			<div class="menu1-dropdown" role="menu">
+				{foreach $item.submenu_items as $sub}
+				{if $sub.enabled}
+				<a href="{if $sub.item_type === 'page' && $sub.page_slug}{$url_root}page/{$sub.page_slug|escape}
+				         {elseif $sub.item_type === 'category' && $sub.category_slug}{$url_root}category/{$sub.category_slug|escape}
+				         {else}{$sub.url|default:'#'|escape}{/if}"
+				   role="menuitem">{$sub.label|escape}</a>
+				{/if}
+				{/foreach}
+			</div>
+			{/if}
+		</div>
 		{/if}
-		<li><a href="{$url_root}?route=checkout">Checkout</a></li>
-		<li><a href="{$url_root}?route=cart">Cart</a></li>
-	</ul>
+		{/foreach}
+	</div>
 </nav>
-
-{* ── Flash message ─────────────────────────────────────────────────────────── *}
-{if $flash}
-<div id="flash" class="flash flash-{$flash.type}">{$flash.message|escape}</div>
 {/if}
 
-{* ── Main layout: sidebar + content ───────────────────────────────────────── *}
-<div id="main-wrap">
+{* ── Page body ───────────────────────────────────────────────────────────── *}
+<div id="page-body">
 
-	<aside id="sidebar">
-		{* Categories *}
-		<div class="sidebar-box">
-			<div class="sidebar-box-head">Categories</div>
-			<div class="sidebar-box-body">
-				{block name="sidebar_categories"}
-				{include file="partials/sidebar_categories.html"}
-				{/block}
-			</div>
+	{* Menu 2 — sidebar *}
+	{if isset($menu2) && $menu2}
+	<button id="sidebar-toggle" aria-expanded="false" aria-controls="sidebar-menu2">
+		&#9776; Browse
+	</button>
+	<nav id="sidebar-menu2" aria-label="Browse navigation">
+		<div class="sidebar-inner">
+			{foreach $menu2 as $item}
+			{if $item.enabled}
+			<a href="{if $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}
+			         {elseif $item.item_type === 'category' && $item.category_slug}{$url_root}category/{$item.category_slug|escape}
+			         {elseif $item.item_type === 'category_tree'}{$url_root}category/{$item.category_slug|escape}
+			         {else}{$item.url|default:'#'|escape}{/if}"
+			   class="sidebar-link">
+				{$item.label|escape}
+				{if $item.show_count && isset($item.product_count)}
+				<span class="sidebar-count">({$item.product_count})</span>
+				{/if}
+			</a>
+			{/if}
+			{/foreach}
 		</div>
-		{* What's New *}
-		<div class="sidebar-box">
-			<div class="sidebar-box-head">What's New</div>
-			<div class="sidebar-box-body">
-				{block name="sidebar_new"}
-				{include file="partials/sidebar_new.html"}
-				{/block}
-			</div>
-		</div>
-		{* Top Sellers *}
-		<div class="sidebar-box">
-			<div class="sidebar-box-head">Top Sellers</div>
-			<div class="sidebar-box-body">
-				{block name="sidebar_top"}
-				{include file="partials/sidebar_top.html"}
-				{/block}
-			</div>
-		</div>
-		{* User-customizable sidebar content *}
-		{block name="sidebar_extra"}
-		{include file="../../usermods/sidebar.html" _optional=true}
-		{/block}
-	</aside>
+	</nav>
+	{/if}
 
-	<main id="content">
+	{* Main content *}
+	<main id="main-content" role="main">
 		{block name="content"}{/block}
 	</main>
 
-</div>{* /main-wrap *}
+</div>
 
-{* ── Footer ────────────────────────────────────────────────────────────────── *}
-<footer id="footer">
-	<p>&copy; {$smarty.now|date_format:'%Y'} {$site_name|escape}. All rights reserved.</p>
-	{block name="footer_extra"}{/block}
+{* ── Footer ─────────────────────────────────────────────────────────────── *}
+<footer id="site-footer">
+	<div class="footer-inner nc-grid">
+		{if isset($footer_blocks) && $footer_blocks}
+		{foreach $footer_blocks as $block}
+		<div class="nc-col-{$block.cols|default:1}">{$block.content}</div>
+		{/foreach}
+		{else}
+		<div class="nc-col-4">
+			<p style="color:var(--nc-text-dim);font-size:.85rem">&copy; {$smarty.now|date_format:'%Y'} {$site_name|escape}</p>
+		</div>
+		{/if}
+	</div>
 </footer>
 
-{* ── JS ────────────────────────────────────────────────────────────────────── *}
+{* ── Mobile nav drawer ───────────────────────────────────────────────────── *}
+<nav id="mobile-nav" aria-label="Mobile navigation" aria-hidden="true">
+	<button id="mobile-nav-close" aria-label="Close navigation">&times;</button>
+	<ul>
+		<li><a href="{$url_root}">Home</a></li>
+		{if isset($menu1) && $menu1}
+		{foreach $menu1 as $item}
+		{if $item.enabled}
+		<li><a href="{if $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}
+		             {elseif $item.item_type === 'category' && $item.category_slug}{$url_root}category/{$item.category_slug|escape}
+		             {else}{$item.url|default:'#'|escape}{/if}">{$item.label|escape}</a></li>
+		{/if}
+		{/foreach}
+		{/if}
+		<li><a href="{$url_root}cart">Cart{if $cart_count > 0} ({$cart_count}){/if}</a></li>
+	</ul>
+</nav>
+<div id="mobile-nav-backdrop"></div>
+<div id="sidebar-backdrop"></div>
+
+{* ── Scripts ─────────────────────────────────────────────────────────────── *}
 <script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
 <script src="/js/vendor/ios-toggle.js"></script>
 <script src="/js/vendor/delete-in-place.js"></script>
-<script src="/js/vendor/maps-edge-date.js"></script>
-<script src="/js/app.js"></script>
-{block name="scripts"}{/block}
+<script src="/js/vendor/debounce-button.js"></script>
+<script src="/js/vendor/password-field.js"></script>
+<script src="/js/catalog.js"></script>
+<script>
+{literal}
+// ── Mini logo via IntersectionObserver ────────────────────────────────────
+(function() {
+	var logo    = document.getElementById('store-logo');
+	var miniLogo = document.getElementById('mini-logo');
+	if (!logo || !miniLogo) return;
+	var obs = new IntersectionObserver(function(entries) {
+		miniLogo.style.display = entries[0].isIntersecting ? 'none' : '';
+	}, { threshold: 0 });
+	obs.observe(logo);
+}());
 
+// ── Hamburger ────────────────────────────────────────────────────────────
+(function() {
+	var ham  = document.getElementById('nav-hamburger');
+	var nav  = document.getElementById('mobile-nav');
+	var back = document.getElementById('mobile-nav-backdrop');
+	var cls  = document.getElementById('mobile-nav-close');
+	if (!ham) return;
+	function openNav()  { nav.classList.add('open'); back.classList.add('show'); ham.setAttribute('aria-expanded','true'); nav.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
+	function closeNav() { nav.classList.remove('open'); back.classList.remove('show'); ham.setAttribute('aria-expanded','false'); nav.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+	ham.addEventListener('click', openNav);
+	cls.addEventListener('click', closeNav);
+	back.addEventListener('click', closeNav);
+	document.addEventListener('keydown', function(e) { if (e.key==='Escape') closeNav(); });
+}());
+
+// ── Sidebar toggle ────────────────────────────────────────────────────────
+(function() {
+	var tog  = document.getElementById('sidebar-toggle');
+	var sb   = document.getElementById('sidebar-menu2');
+	var back = document.getElementById('sidebar-backdrop');
+	if (!tog || !sb) return;
+	function openSb()  { sb.classList.add('open'); back.classList.add('show'); tog.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
+	function closeSb() { sb.classList.remove('open'); back.classList.remove('show'); tog.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
+	tog.addEventListener('click', openSb);
+	back.addEventListener('click', closeSb);
+	document.addEventListener('keydown', function(e) { if (e.key==='Escape') closeSb(); });
+}());
+
+// ── Menu 1 dropdowns ─────────────────────────────────────────────────────
+document.querySelectorAll('.menu1-item.has-dropdown > a').forEach(function(a) {
+	a.addEventListener('click', function(e) {
+		e.preventDefault();
+		var item = a.closest('.menu1-item');
+		var open = item.classList.contains('open');
+		document.querySelectorAll('.menu1-item.open').forEach(function(i) { i.classList.remove('open'); });
+		if (!open) item.classList.add('open');
+		a.setAttribute('aria-expanded', String(!open));
+	});
+});
+document.addEventListener('click', function(e) {
+	if (!e.target.closest('.menu1-item')) {
+		document.querySelectorAll('.menu1-item.open').forEach(function(i) { i.classList.remove('open'); });
+	}
+});
+{/literal}
+</script>
+{block name="scripts"}{/block}
 </body>
 </html>

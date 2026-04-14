@@ -57,19 +57,22 @@ if ($action === 'get') {
 if ($action === 'save') {
 	require_access(ACCESS_EDIT);
 
-	$id           = (int)post('id');
-	$name         = trim(post('name'));
-	$sku          = trim(post('sku'));
-	$price        = (float)post('price');
-	$list_price   = (float)post('list_price');
-	$stock        = (int)post('stock');
-	$status       = (int)post('status');
-	$featured     = (int)(bool)post('featured');
-	$free_ship    = (int)(bool)post('free_shipping');
-	$desc_short   = trim(post('description'));
-	$desc_long    = post('description_long');
-	$cat_ids      = json_decode(post('category_ids') ?: '[]', true);
-	$cat_ids      = array_map('intval', (array)$cat_ids);
+	$id              = (int)post('id');
+	$name            = trim(post('name'));
+	$sku             = trim(post('sku'));
+	$price           = (float)post('price');
+	$list_price      = (float)post('list_price');
+	$stock           = (int)post('stock');
+	$status          = (int)post('status');
+	$featured        = (int)(bool)post('featured');
+	$free_ship       = (int)(bool)post('free_shipping');
+	$desc_short      = trim(post('description'));
+	$desc_long       = post('description_long');
+	$seo_title       = trim(post('seo_title'));
+	$seo_keywords    = trim(post('seo_keywords'));
+	$seo_description = trim(post('seo_description'));
+	$cat_ids         = json_decode(post('category_ids') ?: '[]', true);
+	$cat_ids         = array_map('intval', (array)$cat_ids);
 
 	if (!$name) out(false, 'Product name is required.');
 	if ($price < 0) out(false, 'Price cannot be negative.');
@@ -85,20 +88,24 @@ if ($action === 'save') {
 	if ($id) {
 		require_access(ACCESS_EDIT);
 		$params = [$name, $slug, $sku, $price, $list_price, $stock,
-		           $status, $featured, $free_ship, $desc_short, $desc_long, $id];
+		           $status, $featured, $free_ship, $desc_short, $desc_long,
+		           $seo_title, $seo_keywords, $seo_description, $id];
 		DB::exec("UPDATE `{$p}products` SET
 			name=?, slug=?, sku=?, price=?, list_price=?, stock=?,
-			status=?, featured=?, free_shipping=?, description=?, description_long=?
+			status=?, featured=?, free_shipping=?, description=?, description_long=?,
+			seo_title=?, seo_keywords=?, seo_description=?
 			WHERE id=?", $params);
 	} else {
 		require_access(ACCESS_ADD);
 		$max = (int)DB::val("SELECT MAX(display_order) FROM `{$p}products`");
 		$id  = DB::insert("INSERT INTO `{$p}products`
 			(name, slug, sku, price, list_price, stock, status, featured,
-			 free_shipping, description, description_long, display_order)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			 free_shipping, description, description_long,
+			 seo_title, seo_keywords, seo_description, display_order)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 			[$name, $slug, $sku, $price, $list_price, $stock, $status, $featured,
-			 $free_ship, $desc_short, $desc_long, $max + 1]
+			 $free_ship, $desc_short, $desc_long,
+			 $seo_title, $seo_keywords, $seo_description, $max + 1]
 		);
 	}
 
@@ -170,6 +177,56 @@ if ($action === 'bulk_delete') {
 	DB::exec("DELETE FROM `{$p}categories_products` WHERE product_id IN ({$placeholders})", $ids);
 	DB::exec("DELETE FROM `{$p}product_images` WHERE product_id IN ({$placeholders})", $ids);
 	out(true, count($ids) . ' product' . (count($ids) === 1 ? '' : 's') . ' deleted.');
+}
+
+// ── Clone ─────────────────────────────────────────────────────────────────────
+if ($action === 'clone') {
+	require_access(ACCESS_ADD);
+	$id  = (int)post('id');
+	$src = DB::row("SELECT * FROM `{$p}products` WHERE id=?", [$id]);
+	if (!$src) out(false, 'Product not found.');
+
+	// Unique slug
+	$slug = $src['slug'] . '-copy';
+	$n = 1;
+	while (DB::val("SELECT id FROM `{$p}products` WHERE slug=?", [$slug])) {
+		$slug = $src['slug'] . '-copy-' . (++$n);
+	}
+
+	$max    = (int)DB::val("SELECT MAX(display_order) FROM `{$p}products`");
+	$new_id = DB::insert(
+		"INSERT INTO `{$p}products`
+			(name, slug, sku, description, description_long, price, list_price,
+			 stock, status, featured, free_shipping, display_order)
+		 VALUES (?,?,?,?,?,?,?,?,0,?,?,?)",
+		[
+			$src['name'] . ' (Copy)', $slug, $src['sku'],
+			$src['description'], $src['description_long'],
+			$src['price'], $src['list_price'], $src['stock'],
+			0, // cloned product starts inactive
+			$src['featured'], $src['free_shipping'], $max + 1,
+		]
+	);
+
+	// Copy categories
+	$cats = DB::rows("SELECT category_id FROM `{$p}categories_products` WHERE product_id=?", [$id]);
+	foreach ($cats as $cat) {
+		DB::exec(
+			"INSERT IGNORE INTO `{$p}categories_products` (category_id, product_id) VALUES (?,?)",
+			[$cat['category_id'], $new_id]
+		);
+	}
+
+	$row = DB::row("
+		SELECT p.*, GROUP_CONCAT(c.name ORDER BY c.name SEPARATOR ', ') AS categories
+		FROM `{$p}products` p
+		LEFT JOIN `{$p}categories_products` cp ON cp.product_id = p.id
+		LEFT JOIN `{$p}categories` c ON c.id = cp.category_id
+		WHERE p.id = ?
+		GROUP BY p.id
+	", [$new_id]);
+
+	out(true, 'Product cloned.', ['row' => $row]);
 }
 
 // ── Upload image ──────────────────────────────────────────────────────────────
@@ -301,6 +358,141 @@ if ($action === 'categories') {
 		 WHERE status > 0 ORDER BY display_order ASC, name ASC"
 	);
 	out(true, '', ['categories' => $cats]);
+}
+
+// ── List product options ───────────────────────────────────────────────────────
+if ($action === 'list_options') {
+	$product_id = (int)post('product_id');
+	$pos = DB::rows(
+		"SELECT po.*, o.name AS option_name, o.type, o.placeholder
+		 FROM `{$p}product_options` po
+		 JOIN `{$p}options` o ON o.id = po.option_id
+		 WHERE po.product_id = ?
+		 ORDER BY po.display_order ASC",
+		[$product_id]
+	);
+	foreach ($pos as &$po) {
+		$po['values'] = DB::rows(
+			"SELECT pov.*, ov.text AS value_text, ov.image
+			 FROM `{$p}product_option_values` pov
+			 JOIN `{$p}option_values` ov ON ov.id = pov.option_value_id
+			 WHERE pov.product_option_id = ?
+			 ORDER BY ov.display_order ASC",
+			[$po['id']]
+		);
+	}
+	unset($po);
+	out(true, '', ['product_options' => $pos]);
+}
+
+// ── Add option to product ──────────────────────────────────────────────────────
+if ($action === 'add_option') {
+	require_access(ACCESS_EDIT);
+	$product_id = (int)post('product_id');
+	$option_id  = (int)post('option_id');
+
+	// Prevent duplicates
+	$exists = DB::val(
+		"SELECT id FROM `{$p}product_options` WHERE product_id=? AND option_id=?",
+		[$product_id, $option_id]
+	);
+	if ($exists) out(false, 'This option is already attached to the product.');
+
+	$max = (int)DB::val("SELECT MAX(display_order) FROM `{$p}product_options` WHERE product_id=?", [$product_id]);
+	$po_id = DB::insert(
+		"INSERT INTO `{$p}product_options` (product_id, option_id, label, required, display_order)
+		 VALUES (?,?,'',0,?)",
+		[$product_id, $option_id, $max + 1]
+	);
+
+	// Populate product_option_values from option_values
+	$values = DB::rows(
+		"SELECT * FROM `{$p}option_values` WHERE option_id=? ORDER BY display_order ASC",
+		[$option_id]
+	);
+	foreach ($values as $v) {
+		DB::exec(
+			"INSERT INTO `{$p}product_option_values`
+			 (product_option_id, option_value_id, label, price_modifier, price_prefix,
+			  weight_modifier, weight_prefix, stock, subtract_stock, enabled)
+			 VALUES (?,?,'',0.00,'+',0.0000,'+',0,0,1)",
+			[$po_id, $v['id']]
+		);
+	}
+
+	// Return full option with values
+	$po = DB::row(
+		"SELECT po.*, o.name AS option_name, o.type, o.placeholder
+		 FROM `{$p}product_options` po
+		 JOIN `{$p}options` o ON o.id = po.option_id
+		 WHERE po.id = ?",
+		[$po_id]
+	);
+	$po['values'] = DB::rows(
+		"SELECT pov.*, ov.text AS value_text, ov.image
+		 FROM `{$p}product_option_values` pov
+		 JOIN `{$p}option_values` ov ON ov.id = pov.option_value_id
+		 WHERE pov.product_option_id = ?
+		 ORDER BY ov.display_order ASC",
+		[$po_id]
+	);
+	out(true, '', ['product_option' => $po]);
+}
+
+// ── Save product option (label, required) ─────────────────────────────────────
+if ($action === 'save_option') {
+	require_access(ACCESS_EDIT);
+	$po_id    = (int)post('po_id');
+	$label    = trim(post('label'));
+	$required = (int)post('required');
+	DB::exec(
+		"UPDATE `{$p}product_options` SET label=?, required=? WHERE id=?",
+		[$label, $required, $po_id]
+	);
+	out(true, '');
+}
+
+// ── Remove option from product ────────────────────────────────────────────────
+if ($action === 'remove_option') {
+	require_access(ACCESS_DELETE);
+	$po_id = (int)post('po_id');
+	DB::exec("DELETE FROM `{$p}product_option_values` WHERE product_option_id=?", [$po_id]);
+	DB::exec("DELETE FROM `{$p}product_options` WHERE id=?", [$po_id]);
+	out(true, '');
+}
+
+// ── Save product option value override ────────────────────────────────────────
+if ($action === 'save_option_value') {
+	require_access(ACCESS_EDIT);
+	$pov_id        = (int)post('pov_id');
+	$label         = trim(post('label'));
+	$price_prefix  = post('price_prefix') === '-' ? '-' : '+';
+	$price_mod     = (float)post('price_modifier');
+	$weight_prefix = post('weight_prefix') === '-' ? '-' : '+';
+	$weight_mod    = (float)post('weight_modifier');
+	$stock         = (int)post('stock');
+	$subtract      = (int)post('subtract_stock');
+	$enabled       = (int)post('enabled');
+	DB::exec(
+		"UPDATE `{$p}product_option_values`
+		 SET label=?, price_prefix=?, price_modifier=?,
+		     weight_prefix=?, weight_modifier=?,
+		     stock=?, subtract_stock=?, enabled=?
+		 WHERE id=?",
+		[$label, $price_prefix, $price_mod, $weight_prefix, $weight_mod,
+		 $stock, $subtract, $enabled, $pov_id]
+	);
+	out(true, '');
+}
+
+// ── Search options (for autocomplete) ────────────────────────────────────────
+if ($action === 'search_options') {
+	$q = '%' . trim(post('q')) . '%';
+	$rows = DB::rows(
+		"SELECT id, name, type FROM `{$p}options` WHERE name LIKE ? ORDER BY name ASC LIMIT 20",
+		[$q]
+	);
+	out(true, '', ['rows' => $rows]);
 }
 
 out(false, 'Unknown action.');

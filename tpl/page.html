@@ -1,0 +1,243 @@
+{extends file="layout.html"}
+
+{block name="title"}{if $page.seo_title}{$page.seo_title|escape}{else}{$page.title|escape}{/if} — {$site_name}{/block}
+{block name="meta_desc"}{$page.seo_description|escape}{/block}
+
+{block name="content"}
+{if $page.title !== 'Home'}
+<div class="page-head">
+	<h1>{$page.title|escape}</h1>
+</div>
+{/if}
+
+{foreach $blocks as $block}
+	{if $block.block_type === 'rich_text'}
+		<div class="page-block block-rich-text">
+			{$block.settings.content|default:""}
+		</div>
+
+	{elseif $block.block_type === 'html'}
+		<div class="page-block block-html">
+			{$block.settings.html|default:""}
+		</div>
+
+	{elseif $block.block_type === 'image_text'}
+		<div class="page-block block-image-text">
+			{if $block.settings.image}
+			<div class="image-text-img">
+				<img src="{$block.settings.image|default:""|escape}" alt="{$block.settings.heading|escape|default:''}">
+			</div>
+			{/if}
+			<div class="image-text-body">
+				{if $block.settings.heading}<h2>{$block.settings.heading|escape}</h2>{/if}
+				{if $block.settings.text}<p>{$block.settings.text|escape|nl2br}</p>{/if}
+			</div>
+		</div>
+
+	{elseif $block.block_type === 'slideshow'}
+		{if isset($block.slides) && $block.slides}
+		<div class="page-block block-slideshow slideshow"
+		     data-transition="{$block.slideshow.transition|escape}"
+		     data-interval="{$block.slideshow.interval}"
+		     role="region" aria-label="Image slideshow"
+		     aria-roledescription="carousel">
+			<div class="slideshow-track">
+				{foreach $block.slides as $i => $slide}
+				<div class="slideshow-slide{if $i === 0} active{/if}"
+				     role="group"
+				     aria-roledescription="slide"
+				     aria-label="Slide {$i+1} of {$block.slides|count}">
+					{if $slide.image}
+					<img src="{$slide.image|escape}" alt="{$slide.heading|escape|default:'Slide image'}" loading="lazy">
+					{/if}
+					{if $slide.heading || $slide.subtext || $slide.btn_label}
+					<div class="slideshow-caption">
+						{if $slide.heading}<h2>{$slide.heading|escape}</h2>{/if}
+						{if $slide.subtext}<p>{$slide.subtext|escape}</p>{/if}
+						{if $slide.btn_label && $slide.btn_url}
+						<a class="btn btn-primary" href="{$slide.btn_url|escape}">{$slide.btn_label|escape}</a>
+						{/if}
+					</div>
+					{/if}
+				</div>
+				{/foreach}
+			</div>
+			{if $block.slides|count > 1}
+			<button class="slideshow-prev" aria-label="Previous slide">&#8249;</button>
+			<button class="slideshow-next" aria-label="Next slide">&#8250;</button>
+			<div class="slideshow-dots" role="tablist" aria-label="Slide navigation">
+				{foreach $block.slides as $i => $slide}
+				<button class="slideshow-dot{if $i === 0} active{/if}"
+				        role="tab"
+				        aria-selected="{if $i === 0}true{else}false{/if}"
+				        aria-label="Go to slide {$i+1}"></button>
+				{/foreach}
+			</div>
+			{/if}
+		</div>
+		{/if}
+
+	{elseif in_array($block.block_type, ['featured_products','best_sellers','new_arrivals','best_sellers_category'])}
+		{if isset($block.products) && $block.products}
+		<div class="page-block block-products">
+			{if $block.heading}<h2 class="block-heading">{$block.heading|escape}</h2>{/if}
+			<div class="product-grid">
+				{foreach $block.products as $prod}
+				<a class="product-card" href="{$url_root}product/{$prod.slug|escape}" aria-label="{$prod.name|escape}">
+					<div class="product-card-img">
+						{if $prod.image}
+							<img src="{$prod.image|escape}" alt="{$prod.name|escape}" loading="lazy">
+						{else}
+							<div class="product-card-no-image" aria-hidden="true">&#128247;</div>
+						{/if}
+					</div>
+					<div class="product-card-body">
+						<div class="product-card-name">{$prod.name|escape}</div>
+						<div class="product-card-price">
+							{if $prod.list_price && $prod.list_price > $prod.price}
+								<span class="product-card-list-price">{$site_currency}{$prod.list_price|string_format:"%.2f"}</span>
+							{/if}
+							{$site_currency}{$prod.price|string_format:"%.2f"}
+						</div>
+					</div>
+				</a>
+				{/foreach}
+			</div>
+		</div>
+		{/if}
+
+	{elseif $block.block_type === 'sitemap'}
+		<div class="page-block block-sitemap">
+			{if $block.generated_html}
+				{$block.generated_html}
+			{else}
+				<p style="color:var(--c-text-dim);font-style:italic">Site map not yet generated. Visit the admin Pages section and click "Generate Site Map".</p>
+			{/if}
+		</div>
+
+	{elseif $block.block_type === 'contact_form'}
+		{if isset($block.form)}
+		<div class="page-block block-contact-form">
+			<form class="contact-form" id="contact-form-{$block.form.id}"
+			      data-form-id="{$block.form.id}" novalidate>
+				{foreach $block.form.fields as $field}
+				<div class="cf-field">
+					<label for="cf-{$field.name|escape}-{$block.form.id}">
+						{$field.label|escape}
+						{if $field.required}<span class="field-required" aria-hidden="true">*</span>{/if}
+					</label>
+					{if $field.type === 'textarea'}
+						<textarea id="cf-{$field.name|escape}-{$block.form.id}"
+						          name="{$field.name|escape}" rows="5"
+						          {if $field.required}required aria-required="true"{/if}></textarea>
+					{elseif $field.type === 'select'}
+						<select id="cf-{$field.name|escape}-{$block.form.id}"
+						        name="{$field.name|escape}"
+						        {if $field.required}required aria-required="true"{/if}>
+							<option value="">— Select —</option>
+							{foreach $field.options as $opt}
+							<option value="{$opt|escape}">{$opt|escape}</option>
+							{/foreach}
+						</select>
+					{else}
+						<input type="{$field.type|default:'text'|escape}"
+						       id="cf-{$field.name|escape}-{$block.form.id}"
+						       name="{$field.name|escape}"
+						       {if $field.required}required aria-required="true"{/if}>
+					{/if}
+				</div>
+				{/foreach}
+				<div class="cf-field">
+					<button type="submit" class="btn btn-primary">Send Message</button>
+				</div>
+				<div class="cf-msg" aria-live="polite"></div>
+			</form>
+		</div>
+		{/if}
+
+	{/if}
+{/foreach}
+{/block}
+
+{block name="scripts"}
+<script>
+{literal}
+// ── Slideshows ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('.slideshow').forEach(function(ss) {
+	const slides   = ss.querySelectorAll('.slideshow-slide');
+	const dots     = ss.querySelectorAll('.slideshow-dot');
+	const prevBtn  = ss.querySelector('.slideshow-prev');
+	const nextBtn  = ss.querySelector('.slideshow-next');
+	const interval = parseInt(ss.dataset.interval) || 5000;
+	const trans    = ss.dataset.transition || 'fade';
+	let current    = 0;
+	let timer      = null;
+
+	ss.classList.add('trans-' + trans);
+
+	function goTo(n) {
+		slides[current].classList.remove('active');
+		dots[current]?.classList.remove('active');
+		dots[current]?.setAttribute('aria-selected','false');
+		current = (n + slides.length) % slides.length;
+		slides[current].classList.add('active');
+		dots[current]?.classList.add('active');
+		dots[current]?.setAttribute('aria-selected','true');
+	}
+
+	function startAuto() {
+		if (slides.length <= 1) return;
+		timer = setInterval(() => goTo(current + 1), interval);
+	}
+
+	function stopAuto() { clearInterval(timer); timer = null; }
+
+	if (prevBtn) prevBtn.addEventListener('click', function() { stopAuto(); goTo(current - 1); });
+	if (nextBtn) nextBtn.addEventListener('click', function() { stopAuto(); goTo(current + 1); });
+
+	dots.forEach(function(dot, i) {
+		dot.addEventListener('click', function() { stopAuto(); goTo(i); });
+	});
+
+	ss.addEventListener('mouseenter', stopAuto);
+	ss.addEventListener('mouseleave', startAuto);
+
+	// Touch swipe
+	let touchX = 0;
+	ss.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, {passive:true});
+	ss.addEventListener('touchend', e => {
+		const diff = touchX - e.changedTouches[0].clientX;
+		if (Math.abs(diff) > 40) { stopAuto(); goTo(current + (diff > 0 ? 1 : -1)); }
+	}, {passive:true});
+
+	startAuto();
+});
+
+// ── Contact forms ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.contact-form').forEach(function(form) {
+	form.addEventListener('submit', async function(e) {
+		e.preventDefault();
+		const msg    = form.querySelector('.cf-msg');
+		const btn    = form.querySelector('[type=submit]');
+		const formId = form.dataset.formId;
+		const fd     = new FormData(form);
+		fd.append('action',  'submit');
+		fd.append('form_id', formId);
+
+		btn.disabled = true;
+		const res = await fetch('/?route=contact', { method:'POST', body:fd }).then(r=>r.json());
+		btn.disabled = false;
+
+		if (res.ok) {
+			msg.textContent  = res.message || 'Message sent. Thank you!';
+			msg.style.color  = '#16a34a';
+			form.reset();
+		} else {
+			msg.textContent = res.message || 'Could not send message.';
+			msg.style.color = '#dc2626';
+		}
+	});
+});
+{/literal}
+</script>
+{/block}

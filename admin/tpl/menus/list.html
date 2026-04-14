@@ -1,0 +1,137 @@
+{extends file="../layout.html"}
+
+{block name="head"}
+<link rel="stylesheet" href="{$url_admin_real}css/categories.css">
+<link rel="stylesheet" href="{$url_admin_real}css/menus.css">
+{/block}
+
+{block name="content"}
+<div class="nc-toolbar">
+	<button class="btn btn-primary" id="btn-add-menu">+ Add Menu</button>
+</div>
+
+<div class="menus-layout">
+
+	{* ── Left: menu list ── *}
+	<div class="menu-list-col">
+		<div id="menu-list-empty" class="nc-empty" style="display:none">No menus yet.</div>
+		<ul id="menu-list" role="list"></ul>
+	</div>
+
+	{* ── Right: menu editor ── *}
+	<div class="menu-editor-col" id="menu-editor" style="display:none">
+
+		<div class="menu-editor-head">
+			<input type="hidden" id="edit-menu-id">
+			<input type="text" id="edit-menu-name" placeholder="Menu name"
+			       aria-label="Menu name" maxlength="255" class="menu-name-input">
+			<div class="menu-editor-actions">
+				<button class="btn btn-primary btn-sm" id="btn-save-menu">Save</button>
+			</div>
+		</div>
+
+		<div class="menu-meta-row">
+			<div class="menu-type-group">
+				<span class="menu-meta-head">Type:</span>
+				<label class="menu-role-label">
+					<input type="radio" name="menu-type" value="links_pages" checked> Links / Pages
+				</label>
+				<label class="menu-role-label">
+					<input type="radio" name="menu-type" value="category_list"> Category List
+				</label>
+			</div>
+			<div class="menu-layout-group">
+				<span class="menu-meta-head">Layout:</span>
+				<label class="menu-role-label">
+					<input type="radio" name="menu-role" value="menu2"> Vertical
+				</label>
+				<label class="menu-role-label">
+					<input type="radio" name="menu-role" value="menu1"> Horizontal
+				</label>
+			</div>
+		</div>
+
+		{* ── Category List config ── *}
+		<div id="section-category-list" style="display:none">
+			<div class="menu-items-toolbar">
+				<span class="items-heading">Categories</span>
+			</div>
+			<p class="section-hint">Uncheck categories to exclude them from the menu.</p>
+			<div id="cat-list-checks" class="item-cats-list"></div>
+			<button class="btn btn-secondary btn-sm" id="btn-save-cat-list"
+			        style="margin-top:.65rem">Save</button>
+		</div>
+
+		{* ── Links / Pages items ── *}
+		<div id="section-links-pages" style="display:none">
+			<div class="menu-items-toolbar">
+				<span class="items-heading">Items</span>
+				<button class="btn btn-secondary btn-sm" id="btn-add-item">+ Add Item</button>
+			</div>
+			<div id="menu-items-list" role="list" aria-label="Menu items"></div>
+		</div>
+
+	</div>
+
+	{* ── Item editor panel ── *}
+	<div id="item-editor-panel" style="display:none">
+		<div class="item-editor-inner">
+			<div class="item-editor-head">
+				<h3 id="item-editor-title">Add Item</h3>
+				<button class="btn-icon" id="btn-item-cancel" aria-label="Close">&times;</button>
+			</div>
+			<input type="hidden" id="item-id">
+			<input type="hidden" id="item-menu-id">
+
+			<div class="df">
+				<label for="item-label">Label <span class="hint">(optional for Page — uses page title)</span></label>
+				<input type="text" id="item-label" maxlength="255">
+			</div>
+			<div class="df">
+				<label for="item-type">Type</label>
+				<select id="item-type">
+					<option value="url">URL</option>
+					<option value="page">Page</option>
+					<option value="javascript">JavaScript</option>
+				</select>
+			</div>
+			<div class="df" id="item-url-row">
+				<label for="item-url">URL</label>
+				<input type="text" id="item-url" maxlength="500" placeholder="/about">
+			</div>
+			<div class="df" id="item-page-row" style="display:none">
+				<label for="item-page">Page</label>
+				<select id="item-page"><option value="">— Select page —</option></select>
+			</div>
+			<div class="df" id="item-js-row" style="display:none">
+				<label for="item-js">JavaScript</label>
+				<textarea id="item-js" rows="4" placeholder="e.g. openChat()"></textarea>
+			</div>
+			<div class="df">
+				<label for="item-target">Target</label>
+				<select id="item-target">
+					<option value="">Same window</option>
+					<option value="_blank">New window</option>
+				</select>
+			</div>
+
+			<div style="display:flex;gap:.5rem;margin-top:1rem">
+				<button class="btn btn-primary" id="btn-save-item">Save</button>
+				<button class="btn btn-secondary" id="btn-item-cancel2">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+</div>
+{/block}
+
+{block name="scripts"}
+<script>
+var NC = { adminUrl: '{$url_admin}', rootUrl: '{$url_root}', adminReal: '{$url_admin_real}' };
+</script>
+<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="{$url_root}js/vendor/ios-toggle.js"></script>
+<script src="{$url_root}js/vendor/delete-in-place.js"></script>
+<script src="{$url_admin_real}js/menus.js"></script>
+{/block}

@@ -3,7 +3,7 @@
 {block name="title"}Setup & Utilities — {$site_name|escape}{/block}
 
 {block name="head"}
-<link rel="stylesheet" href="/admin/css/settings.css">
+<link rel="stylesheet" href="{$url_admin_real}css/settings.css">
 {/block}
 
 {block name="content"}
@@ -20,6 +20,8 @@
 	<button class="settings-tab" data-tab="local">Local</button>
 	<button class="settings-tab" data-tab="mail">Mail</button>
 	<button class="settings-tab" data-tab="server">Server</button>
+	<button class="settings-tab" data-tab="options">Options</button>
+	<button class="settings-tab" data-tab="seo">SEO</button>
 	<button class="settings-tab" data-tab="users">Users</button>
 	<button class="settings-tab" data-tab="errors">Error Log</button>
 </div>
@@ -43,6 +45,25 @@
 					<div class="df narrow">
 						<label for="s_site_currency">Currency</label>
 						<input type="text" id="s_site_currency" maxlength="8">
+					</div>
+				</div>
+				<div class="df-row">
+					<div class="df">
+						<label for="s_store_phone">Phone Number</label>
+						<input type="text" id="s_store_phone" maxlength="64"
+						       placeholder="e.g. (800) 555-1234">
+					</div>
+					<div class="df">
+						<label for="s_store_logo_url">Logo URL</label>
+						<div style="display:flex;gap:.4rem;align-items:center">
+							<input type="text" id="s_store_logo_url" maxlength="500"
+							       placeholder="/img/logo.png or https://…"
+							       aria-describedby="logo-hint" style="flex:1">
+							<button type="button" class="btn btn-secondary btn-sm"
+							        id="btn-logo-pick" aria-label="Pick logo from file manager"
+							        title="Pick from file manager">🖼</button>
+						</div>
+						<span class="hint" id="logo-hint">Leave blank to show store name as text.</span>
 					</div>
 				</div>
 			</div>
@@ -176,7 +197,7 @@
 				</div>
 				<div class="df">
 					<label for="s_smtp_pass">Password</label>
-					<input type="password" id="s_smtp_pass" autocomplete="new-password">
+					<input type="text" id="s_smtp_pass" >
 				</div>
 			</div>
 		</div>
@@ -257,7 +278,292 @@
 	</div>
 </div>
 
+{* ── Options tab ── *}
+<div class="tab-panel" id="tab-options">
+
+	<div class="sub-tabs" role="tablist" aria-label="Options sections">
+		<button class="sub-tab active" data-sub="images" role="tab" aria-selected="true"  aria-controls="sub-images">Images</button>
+		<button class="sub-tab"        data-sub="ai"     role="tab" aria-selected="false" aria-controls="sub-ai">AI</button>
+		<button class="sub-tab"        data-sub="integrations" role="tab" aria-selected="false" aria-controls="sub-integrations">Integrations</button>
+		<button class="sub-tab"        data-sub="wishlist" role="tab" aria-selected="false" aria-controls="sub-wishlist">Wish Lists</button>
+		<button class="sub-tab"        data-sub="placeholder" role="tab" aria-selected="false" aria-controls="sub-placeholder">Placeholder</button>
+	</div>
+
+	{* ── Images sub-tab ── *}
+	<div class="sub-panel active" id="sub-images" role="tabpanel" aria-labelledby implied>
+		<div class="settings-card">
+			<div class="card-head">Upload</div>
+			<div class="card-body settings-stack">
+				<div class="df-toggle">
+					<ios-toggle id="s_img_retain_names" size="sm"></ios-toggle>
+					<label for="s_img_retain_names">Retain image names on upload</label>
+				</div>
+				<div class="df-toggle">
+					<ios-toggle id="s_img_resize_on_upload" size="sm" checked></ios-toggle>
+					<label for="s_img_resize_on_upload">Resize on upload to</label>
+					<input type="number" id="s_img_orig_max" min="200" max="4000" value="600"
+					       style="width:80px" aria-label="Max upload width">
+					<span class="hint">px wide (max)</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="settings-card">
+			<div class="card-head">Thumbnails</div>
+			<div class="card-body">
+				<div class="img-thumb-grid">
+					<span></span>
+					<span class="img-col-head">Size (px)</span>
+					<span class="img-col-head">Quality</span>
+
+					<label class="img-row-label">Product Admin</label>
+					<input type="number" id="s_img_admin_size" min="40" max="800" value="160" aria-label="Admin thumbnail size">
+					<input type="number" id="s_img_admin_quality" min="1" max="100" value="75" aria-label="Admin thumbnail quality">
+
+					<label class="img-row-label">File Manager</label>
+					<input type="number" id="s_img_fm_size" min="24" max="200" value="50" aria-label="File manager thumbnail size">
+					<input type="number" id="s_img_fm_quality" min="1" max="100" value="60" aria-label="File manager thumbnail quality">
+
+					<label class="img-row-label">Product Image</label>
+					<input type="number" id="s_img_product_width" min="200" max="2000" value="600" aria-label="Product image width">
+					<input type="number" id="s_img_product_quality" min="1" max="100" value="80" aria-label="Product image quality">
+				</div>
+				<p class="section-hint" style="margin-top:.75rem">Product Admin: shown in admin product list, proportionally scaled. File Manager: cropped square for icon view. Product Image: displayed on the catalog product page.</p>
+			</div>
+		</div>
+
+	</div>
+
+	{* ── AI sub-tab ── *}
+	<div class="sub-panel" id="sub-ai" role="tabpanel">
+		<div class="card-grid">
+			<div class="settings-card">
+				<div class="card-head">DeepAI Integration</div>
+				<div class="card-body">
+					<p class="section-hint">
+						Used to generate category and product descriptions and SEO fields.
+						Get your key at <a href="https://deepai.org" target="_blank" rel="noopener">deepai.org</a>.
+					</p>
+					<div class="df">
+						<label for="s_deepai_key">DeepAI API Key</label>
+						<input type="text" id="s_deepai_key" maxlength="255" autocomplete="off"
+						       placeholder="Leave blank to disable AI features"
+						       aria-label="DeepAI API key">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	{* ── Integrations sub-tab ── *}
+	<div class="sub-panel" id="sub-integrations" role="tabpanel">
+		<div class="card-grid">
+
+			{* Stripe — shown only when stripe plugin is active *}
+			{if in_array('stripe', $active_plugins)}
+			<div class="settings-card">
+				<div class="card-head">Stripe Payments</div>
+				<div class="card-body">
+
+					<div class="df-toggle" style="margin-bottom:1.25rem">
+						<label for="s_stripe_mode" style="font-weight:600;min-width:0">Mode</label>
+						<select id="s_stripe_mode" aria-label="Stripe mode" style="width:auto">
+							<option value="test">Test</option>
+							<option value="live">Live</option>
+						</select>
+						<span class="hint" style="margin:0">Switch between test and live credentials.</span>
+					</div>
+
+					<p class="section-hint" style="margin-bottom:.6rem;font-weight:700">Test Credentials</p>
+					<div class="df">
+						<label for="s_stripe_test_publishable_key">Test Publishable Key</label>
+						<input type="text" id="s_stripe_test_publishable_key" maxlength="255"
+						       autocomplete="off" placeholder="pk_test_..."
+						       aria-label="Stripe test publishable key">
+					</div>
+					<div class="df">
+						<label for="s_stripe_test_secret_key">Test Secret Key</label>
+						<input type="text" id="s_stripe_test_secret_key" maxlength="255"
+						       autocomplete="off" placeholder="sk_test_..."
+						       aria-label="Stripe test secret key">
+					</div>
+					<div class="df">
+						<label for="s_stripe_test_webhook_secret">Test Webhook Secret</label>
+						<input type="text" id="s_stripe_test_webhook_secret" maxlength="255"
+						       autocomplete="off" placeholder="whsec_..."
+						       aria-label="Stripe test webhook secret">
+					</div>
+
+					<p class="section-hint" style="margin:.85rem 0 .6rem;font-weight:700">Live Credentials</p>
+					<div class="df">
+						<label for="s_stripe_publishable_key">Live Publishable Key</label>
+						<input type="text" id="s_stripe_publishable_key" maxlength="255"
+						       autocomplete="off" placeholder="pk_live_..."
+						       aria-label="Stripe live publishable key">
+					</div>
+					<div class="df">
+						<label for="s_stripe_secret_key">Live Secret Key</label>
+						<input type="text" id="s_stripe_secret_key" maxlength="255"
+						       autocomplete="off" placeholder="sk_live_..."
+						       aria-label="Stripe live secret key">
+					</div>
+					<div class="df">
+						<label for="s_stripe_webhook_secret">Live Webhook Secret</label>
+						<input type="text" id="s_stripe_webhook_secret" maxlength="255"
+						       autocomplete="off" placeholder="whsec_..."
+						       aria-label="Stripe live webhook secret">
+						<div class="hint">Point webhook to: <code>{$url_root}?route=stripe/webhook</code></div>
+					</div>
+
+				</div>
+			</div>
+			{/if}
+
+			{* GoShippo — shown only when goshippo plugin is active *}
+			{if in_array('goshippo', $active_plugins)}
+			<div class="settings-card">
+				<div class="card-head">GoShippo Shipping</div>
+				<div class="card-body">
+					<div class="df">
+						<label for="s_shippo_api_key">Shippo API Key</label>
+						<input type="text" id="s_shippo_api_key" maxlength="255"
+						       autocomplete="off" placeholder="shippo_live_..."
+						       aria-label="Shippo API key">
+					</div>
+					<p class="section-hint" style="margin-bottom:.85rem">Ship from address</p>
+					<div class="df-row">
+						<div class="df">
+							<label for="s_shippo_from_name">Name</label>
+							<input type="text" id="s_shippo_from_name" maxlength="255" aria-label="Ship from name">
+						</div>
+					</div>
+					<div class="df">
+						<label for="s_shippo_from_street1">Street</label>
+						<input type="text" id="s_shippo_from_street1" maxlength="255" aria-label="Ship from street">
+					</div>
+					<div class="df-row">
+						<div class="df">
+							<label for="s_shippo_from_city">City</label>
+							<input type="text" id="s_shippo_from_city" maxlength="128" aria-label="Ship from city">
+						</div>
+						<div class="df" style="flex:0 0 80px">
+							<label for="s_shippo_from_state">State</label>
+							<input type="text" id="s_shippo_from_state" maxlength="32" aria-label="Ship from state">
+						</div>
+						<div class="df" style="flex:0 0 100px">
+							<label for="s_shippo_from_zip">ZIP</label>
+							<input type="text" id="s_shippo_from_zip" maxlength="20" aria-label="Ship from zip">
+						</div>
+					</div>
+					<div class="df">
+						<label for="s_shippo_from_country">Country</label>
+						<input type="text" id="s_shippo_from_country" maxlength="2" value="US" aria-label="Ship from country code">
+					</div>
+					<p class="section-hint" style="margin:.75rem 0 .5rem">Default parcel dimensions</p>
+					<div class="df-row">
+						<div class="df">
+							<label for="s_shippo_parcel_length">L</label>
+							<input type="number" id="s_shippo_parcel_length" min="1" step="0.1" value="10" aria-label="Parcel length">
+						</div>
+						<div class="df">
+							<label for="s_shippo_parcel_width">W</label>
+							<input type="number" id="s_shippo_parcel_width" min="1" step="0.1" value="8" aria-label="Parcel width">
+						</div>
+						<div class="df">
+							<label for="s_shippo_parcel_height">H</label>
+							<input type="number" id="s_shippo_parcel_height" min="1" step="0.1" value="4" aria-label="Parcel height">
+						</div>
+						<div class="df" style="flex:0 0 80px">
+							<label for="s_shippo_parcel_distance_unit">Unit</label>
+							<select id="s_shippo_parcel_distance_unit" aria-label="Distance unit">
+								<option value="in">in</option>
+								<option value="cm">cm</option>
+							</select>
+						</div>
+					</div>
+					<div class="df-row">
+						<div class="df">
+							<label for="s_shippo_parcel_weight">Weight</label>
+							<input type="number" id="s_shippo_parcel_weight" min="0.1" step="0.1" value="2" aria-label="Parcel weight">
+						</div>
+						<div class="df" style="flex:0 0 80px">
+							<label for="s_shippo_parcel_mass_unit">Unit</label>
+							<select id="s_shippo_parcel_mass_unit" aria-label="Mass unit">
+								<option value="lb">lb</option>
+								<option value="kg">kg</option>
+								<option value="oz">oz</option>
+								<option value="g">g</option>
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+			{/if}
+
+			{if !in_array('stripe', $active_plugins) && !in_array('goshippo', $active_plugins)}
+			<div class="settings-card">
+				<div class="card-body">
+					<p class="section-hint">No integration plugins are currently active. Enable Stripe or GoShippo from the <a href="{$url_admin}?route=plugins">Plugins</a> page.</p>
+				</div>
+			</div>
+			{/if}
+
+		</div>
+	</div>
+
+	{* ── Wish List sub-tab ── *}
+	<div class="sub-panel" id="sub-wishlist" role="tabpanel">
+		<div class="card-grid">
+			<div class="settings-card">
+				<div class="card-head">Guest Wish Lists</div>
+				<div class="card-body">
+					<div class="df">
+						<label for="s_wishlist_guest_days">Guest list expiry (days)</label>
+						<input type="number" id="s_wishlist_guest_days" min="1" max="365"
+						       value="14" aria-label="Guest wish list expiry in days">
+						<div class="hint">Wish lists created by guests expire after this many days. Set to 0 to never expire.</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	{* ── Placeholder sub-tab ── *}
+	<div class="sub-panel" id="sub-placeholder" role="tabpanel">
+		<div class="card-grid">
+			<div class="settings-card">
+				<div class="card-head">Placeholder</div>
+				<div class="card-body">
+					<p class="section-hint">This section is reserved for future options.</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+
 {* ── Users tab ── *}
+<div class="tab-panel" id="tab-seo">
+	<div class="card-grid">
+		<div class="settings-card" style="max-width:680px">
+			<div class="card-head">robots.txt</div>
+			<div class="card-body">
+				<div class="nc-warning-box" role="alert" style="background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--nc-radius);padding:.75rem 1rem;margin-bottom:1rem;font-size:.88rem;color:#92400e">
+					<strong>&#9888; Caution:</strong> An incorrect entry in robots.txt can instruct search engines to ignore your entire site, removing it from search results. Do not make changes here unless you know exactly what you are doing. When in doubt, leave the default.
+				</div>
+				<div class="df">
+					<label for="s_robots_txt">robots.txt content</label>
+					<textarea id="s_robots_txt" rows="10"
+					          style="font-family:monospace;font-size:.85rem"
+					          aria-label="robots.txt content"
+					          aria-describedby="robots-hint"></textarea>
+					<span class="hint" id="robots-hint">Saved to <code>robots.txt</code> in your site root. Changes take effect immediately.</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="tab-panel" id="tab-users">
 	<div class="nc-toolbar">
 		<button class="btn btn-primary" id="btn-add-user">+ Add User</button>
@@ -334,7 +640,7 @@
 		</div>
 		<div class="df">
 			<label for="u_password">Password</label>
-			<input type="password" id="u_password" minlength="8" autocomplete="new-password" placeholder="Required for new users">
+			<password-field id="u_password" name="u_password" minlength="8" placeholder="Required for new users"></password-field>
 			<div class="hint">Minimum 8 characters. Leave blank to keep current password.</div>
 		</div>
 		<div class="df">
@@ -363,12 +669,15 @@
 <script>
 var NC = {
 	adminUrl: '{$url_admin}',
-	rootUrl:  '{$url_root}'
+	rootUrl:  '{$url_root}',
+	adminReal: '{$url_admin_real}'
 };
 </script>
-<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
-<script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
-<script src="/js/vendor/ios-toggle.js"></script>
-<script src="/js/vendor/delete-in-place.js"></script>
-<script src="/admin/js/settings.js"></script>
+<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="{$url_root}js/vendor/ios-toggle.js"></script>
+<script src="{$url_root}js/vendor/delete-in-place.js"></script>
+<link rel="stylesheet" href="{$url_admin_real}css/filemanager.css">
+<script src="{$url_admin_real}js/filemanager.js?v=149"></script>
+<script src="{$url_admin_real}js/settings.js"></script>
 {/block}

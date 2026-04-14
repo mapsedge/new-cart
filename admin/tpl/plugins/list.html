@@ -3,7 +3,7 @@
 {block name="title"}Plugins — {$site_name|escape}{/block}
 
 {block name="head"}
-<link rel="stylesheet" href="/admin/css/plugins.css">
+<link rel="stylesheet" href="{$url_admin_real}css/plugins.css">
 {/block}
 
 {block name="content"}
@@ -38,6 +38,7 @@
 			<th>Plugin</th>
 			<th>Author</th>
 			<th>Link</th>
+			<th class="col-settings"></th>
 			<th class="col-toggle">Enabled</th>
 			<th class="col-delete"></th>
 		</tr>
@@ -58,9 +59,9 @@ var NC = {
 	rootUrl:  '{$url_root}'
 };
 </script>
-<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
-<script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
-<script src="/js/vendor/ios-toggle.js"></script>
-<script src="/js/vendor/delete-in-place.js"></script>
-<script src="/admin/js/plugins.js"></script>
+<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="{$url_root}js/vendor/ios-toggle.js"></script>
+<script src="{$url_root}js/vendor/delete-in-place.js"></script>
+<script src="{$url_admin_real}js/plugins.js"></script>
 {/block}

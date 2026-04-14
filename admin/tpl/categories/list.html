@@ -3,7 +3,7 @@
 {block name="title"}Categories — {$site_name|escape}{/block}
 
 {block name="head"}
-<link rel="stylesheet" href="/admin/css/categories.css">
+<link rel="stylesheet" href="{$url_admin_real}css/categories.css">
 {/block}
 
 {block name="content"}
@@ -45,44 +45,80 @@
 		<h2 id="drawer-title">Add Category</h2>
 		<button class="drawer-close" id="drawer-close">&times;</button>
 	</drawer-head>
-	<drawer-content>
+	<drawer-content id="cat-drawer-content">
 		<input type="hidden" id="cat-id" value="">
 
 		<div class="df">
-			<label for="cat-name">Category Name <span class="field-required">*</span></label>
-			<input type="text" id="cat-name" maxlength="255" required>
+			<label for="cat-name">Category Name <span class="field-required" aria-hidden="true">*</span></label>
+			<input type="text" id="cat-name" maxlength="255" required
+			       aria-required="true" aria-label="Category name">
 		</div>
 
 		<div class="df">
 			<label for="cat-parent">Parent Category</label>
-			<select id="cat-parent">
+			<select id="cat-parent" aria-label="Parent category">
 				<option value="0">&mdash; Top Level &mdash;</option>
 			</select>
 		</div>
 
 		<div class="df">
-			<label for="cat-seo">Page Title (SEO)</label>
-			<input type="text" id="cat-seo" maxlength="300" placeholder="Defaults to category name if left blank">
+			<label for="cat-html-long">Description</label>
+			<div class="df-editor-wrap">
+				<div id="cat-html-long-toolbar-ext" class="trumbowyg-ext-toolbar">
+					<button type="button" class="btn-trumbo-ext" id="btn-cat-insert-image"
+					        title="Insert image from File Manager" aria-label="Insert image from File Manager">&#128247;</button>
+					<button type="button" class="btn-trumbo-ext btn-ai" id="btn-cat-ai-desc"
+					        title="Generate description with AI" aria-label="Generate AI description">&#10024; AI</button>
+				</div>
+				<textarea id="cat-html-long" rows="6" aria-label="Category description"></textarea>
+			</div>
 		</div>
 
-		<div class="df">
-			<label for="cat-html-long">Description</label>
-			<textarea id="cat-html-long" rows="6"></textarea>
+		<div class="df seo-section">
+			<div class="seo-section-head">
+				<span>SEO</span>
+				<button type="button" class="btn btn-secondary btn-xs btn-ai-seo" id="btn-cat-ai-seo"
+				        aria-label="Generate all SEO fields with AI">&#10024; Generate SEO</button>
+			</div>
+			<div class="df">
+				<label for="cat-seo">Page Title</label>
+				<input type="text" id="cat-seo" maxlength="300"
+				       placeholder="Defaults to category name if left blank"
+				       aria-label="SEO page title">
+			</div>
+			<div class="df">
+				<label for="cat-seo-keywords">Keywords</label>
+				<input type="text" id="cat-seo-keywords" maxlength="500"
+				       placeholder="comma, separated, keywords"
+				       aria-label="SEO keywords">
+			</div>
+			<div class="df">
+				<label for="cat-seo-description">Meta Description</label>
+				<textarea id="cat-seo-description" rows="2" maxlength="500"
+				          placeholder="Defaults to description excerpt if left blank"
+				          aria-label="SEO meta description"></textarea>
+			</div>
 		</div>
 
 		<div class="df-row">
 			<div class="df">
 				<label>Status</label>
-				<roller-select id="cat-status" name="cat-status" value="1">
+				<roller-select id="cat-status" name="cat-status" value="1" aria-label="Category status">
 					<rs-item value="0">Not Active</rs-item>
 					<rs-item value="1">Active</rs-item>
 					<rs-item value="2">Browse Only</rs-item>
 				</roller-select>
 			</div>
 			<div class="df-toggle">
-				<ios-toggle id="cat-featured" name="cat-featured" size="sm"></ios-toggle>
+				<ios-toggle id="cat-featured" name="cat-featured" size="sm"
+				            aria-label="Featured category"></ios-toggle>
 				<label for="cat-featured">Featured</label>
 			</div>
+		</div>
+
+		<!-- Scroll indicator: shown when content overflows, hidden on desc focus or scroll -->
+		<div class="drawer-scroll-indicator hidden" id="cat-scroll-indicator" aria-hidden="true">
+			<span class="drawer-scroll-chevron">&#8964;</span>
 		</div>
 
 	</drawer-content>
@@ -100,13 +136,16 @@ var NC = {
 	adminUrl:       '{$url_admin}',
 	rootUrl:        '{$url_root}',
 	siteName:       '{$site_name|escape:"javascript"}',
-	incompleteCats: {$incomplete_cat_ids|json_encode}
+	incompleteCats: {$incomplete_cat_ids|json_encode},
+	deepaiKey:      '{$deepai_key|escape:"javascript"}'
 };
 </script>
-<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
-<script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
-<script src="/js/vendor/roller-select.js"></script>
-<script src="/js/vendor/ios-toggle.js"></script>
-<script src="/js/vendor/delete-in-place.js"></script>
-<script src="/admin/js/categories.js"></script>
+<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="{$url_root}js/vendor/roller-select.js"></script>
+<script src="{$url_root}js/vendor/ios-toggle.js"></script>
+<script src="{$url_root}js/vendor/delete-in-place.js"></script>
+<link rel="stylesheet" href="{$url_admin_real}css/filemanager.css">
+<script src="{$url_admin_real}js/filemanager.js?v=136"></script>
+<script src="{$url_admin_real}js/categories.js"></script>
 {/block}

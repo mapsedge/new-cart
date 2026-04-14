@@ -20,6 +20,10 @@ if ($action === 'load') {
 	$rows     = DB::rows("SELECT `key`, `value` FROM `{$p}settings`");
 	$settings = array_column($rows, 'value', 'key');
 
+	// Read robots.txt
+	$robots_path = DIR_ROOT . 'robots.txt';
+	$robots_txt  = file_exists($robots_path) ? file_get_contents($robots_path) : '';
+
 	$users = DB::rows(
 		"SELECT id, username, email, access_level, status, avatar
 		 FROM `{$p}admin`
@@ -32,6 +36,7 @@ if ($action === 'load') {
 
 	out(true, '', [
 		'settings'    => $settings,
+		'robots_txt'  => $robots_txt,
 		'users'       => $users,
 		'log_content' => $log_content,
 	]);
@@ -41,7 +46,10 @@ if ($action === 'load') {
 if ($action === 'save_all') {
 	$all_fields = [
 		// Store
-		'site_name', 'site_email', 'site_currency',
+		'site_name', 'site_email', 'site_currency', 'store_phone', 'store_logo_url',
+		'img_retain_names', 'img_resize_on_upload', 'img_orig_max',
+		'img_admin_size', 'img_admin_quality', 'img_fm_size', 'img_fm_quality',
+		'img_product_width', 'img_product_quality',
 		'seo_title_default', 'seo_description_default', 'seo_keywords_default',
 		// Local
 		'address', 'phone', 'timezone', 'date_format', 'currency_position',
@@ -51,6 +59,21 @@ if ($action === 'save_all') {
 		'maintenance_mode', 'use_seo_urls',
 		'pw_min_length', 'pw_require_upper', 'pw_require_number', 'pw_require_symbol',
 		'display_errors', 'log_errors',
+		// Options — Images
+		'img_orig_max', 'img_admin_size', 'img_admin_quality', 'img_fm_size', 'img_fm_quality',
+		// Options — AI
+		'deepai_key',
+		// Stripe
+		'stripe_mode',
+		'stripe_test_publishable_key', 'stripe_test_secret_key', 'stripe_test_webhook_secret',
+		'stripe_publishable_key', 'stripe_secret_key', 'stripe_webhook_secret',
+		// GoShippo
+		'shippo_api_key',
+		'shippo_from_name', 'shippo_from_street1', 'shippo_from_city',
+		'shippo_from_state', 'shippo_from_zip', 'shippo_from_country',
+		'shippo_parcel_length', 'shippo_parcel_width', 'shippo_parcel_height',
+		'shippo_parcel_distance_unit', 'shippo_parcel_weight', 'shippo_parcel_mass_unit',
+		'wishlist_guest_days',
 	];
 
 	foreach ($all_fields as $key) {
@@ -95,6 +118,12 @@ if ($action === 'save_all') {
 			);
 			rewriteHtaccess($new_path);
 		}
+	}
+
+	// Write robots.txt
+	$robots_content = post('robots_txt', '');
+	if ($robots_content !== '') {
+		@file_put_contents(DIR_ROOT . 'robots.txt', $robots_content);
 	}
 
 	$name = DB::val("SELECT `value` FROM `{$p}settings` WHERE `key`='site_name'");

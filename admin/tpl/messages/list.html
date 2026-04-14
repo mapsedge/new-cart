@@ -1,0 +1,44 @@
+{extends file="../layout.html"}
+
+{block name="head"}
+<link rel="stylesheet" href="{$url_admin_real}css/categories.css">
+<link rel="stylesheet" href="{$url_admin_real}css/messages.css">
+{/block}
+
+{block name="content"}
+<div id="messages-empty" style="display:none">
+	<p class="nc-empty">No messages yet.</p>
+</div>
+
+<table class="nc-table" id="messages-table" style="display:none">
+	<thead>
+		<tr>
+			<th>Date</th>
+			<th>Form</th>
+			<th>Summary</th>
+			<th></th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody id="messages-tbody"></tbody>
+</table>
+
+{* Message detail panel *}
+<div id="message-detail" style="display:none">
+	<div class="message-detail-head">
+		<button class="btn btn-secondary btn-sm" id="btn-back-messages">&#8592; Back</button>
+		<span id="message-detail-title"></span>
+	</div>
+	<div id="message-detail-body" class="message-detail-body"></div>
+</div>
+{/block}
+
+{block name="scripts"}
+<script>
+var NC = { adminUrl: '{$url_admin}', rootUrl: '{$url_root}' };
+</script>
+<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="{$url_root}js/vendor/delete-in-place.js"></script>
+<script src="{$url_admin_real}js/messages.js"></script>
+{/block}

@@ -256,3 +256,81 @@ roller-select .rs-track {
 	vertical-align: middle;
 	cursor: default;
 }
+
+/* ── SEO section in drawer ── */
+.seo-section {
+	border: 1px solid var(--nc-border);
+	border-radius: var(--nc-radius);
+	padding: .75rem .85rem .5rem;
+	margin-bottom: .75rem;
+}
+.seo-section-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: .75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: #555;
+	margin-bottom: .65rem;
+}
+.seo-section .df { margin-bottom: .5rem; }
+.seo-section .df:last-child { margin-bottom: 0; }
+
+/* ── AI buttons ── */
+.btn-ai, .btn-ai-seo {
+	font-size: .75rem;
+	padding: .2rem .5rem;
+	background: #f0f7ff;
+	border: 1px solid #bfdbfe;
+	color: #1d4ed8;
+	border-radius: var(--nc-radius);
+	cursor: pointer;
+	white-space: nowrap;
+}
+.btn-ai:hover, .btn-ai-seo:hover { background: #dbeafe; }
+.btn-ai:disabled, .btn-ai-seo:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-xs { font-size: .75rem; padding: .2rem .5rem; }
+
+/* ── Trumbowyg ext toolbar (image + AI button row above editor) ── */
+.df-editor-wrap { display: flex; flex-direction: column; }
+.trumbowyg-ext-toolbar {
+	display: flex;
+	gap: .4rem;
+	margin-bottom: .3rem;
+}
+.btn-trumbo-ext {
+	background: var(--nc-bg);
+	border: 1px solid var(--nc-border);
+	border-radius: var(--nc-radius);
+	font-size: .8rem;
+	padding: .2rem .5rem;
+	cursor: pointer;
+	color: var(--nc-text);
+}
+.btn-trumbo-ext:hover { background: var(--nc-hover); }
+
+/* ── Drawer scroll indicator ── */
+.drawer-scroll-indicator {
+	position: sticky;
+	bottom: 0;
+	left: 0; right: 0;
+	text-align: center;
+	pointer-events: none;
+	padding: .4rem 0 .2rem;
+	background: linear-gradient(transparent, rgba(255,255,255,.95) 40%);
+	transition: opacity .3s;
+}
+.drawer-scroll-indicator.hidden { opacity: 0; }
+.drawer-scroll-chevron {
+	font-size: 2.8rem;
+	color: var(--nc-primary, #2563eb);
+	animation: bounce-down .9s ease-in-out infinite;
+	display: inline-block;
+}
+@keyframes bounce-down {
+	0%, 100% { transform: translateY(0); }
+	50%       { transform: translateY(5px); }
+}

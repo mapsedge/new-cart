@@ -1,0 +1,7 @@
+**/cache/
+**/*cache*/
+*.webp
+*.jpg
+*.png
+*.gif
+*.svg

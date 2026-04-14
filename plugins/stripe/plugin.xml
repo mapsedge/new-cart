@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+    <code>stripe</code>
+    <name>Stripe Payments</name>
+    <version>1.0.0</version>
+    <author>Map's Edge Creative</author>
+    <description>Accept credit card payments via Stripe Payment Element.</description>
+    <hooks>
+        <hook>catalog.checkout.payment_methods</hook>
+        <hook>catalog.order.payment_complete</hook>
+    </hooks>
+    <settings>
+        <key>stripe_publishable_key</key>
+        <key>stripe_secret_key</key>
+        <key>stripe_webhook_secret</key>
+    </settings>
+</plugin>

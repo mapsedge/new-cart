@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+<url><loc>/page/about-us</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>/page/contact-us</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>/page/returns</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>/page/privacy-policy</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>/page/terms</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>/page/sitemap</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>/page/my-account</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>/page/wishlist</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>/category/greeting-cards</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+<url><loc>/category/bookmarks</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+<url><loc>/category/owls</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+<url><loc>/category/borbs</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+<url><loc>/product/happy-owl-bookmark</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>/product/happy-owl-sticky-notes</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+</urlset>

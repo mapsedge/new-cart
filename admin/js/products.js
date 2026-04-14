@@ -139,41 +139,69 @@
 		if (res.ok) allCategories = res.categories || [];
 	}
 
-	// ── Separated click-to-edit: price and list price ─────────────────────────
+	// ── Edit-in-place: click to show, blur or Enter to commit ────────────────
 	tbody.addEventListener('click', function (e) {
 		// Price
 		const pd = e.target.closest('.price-display');
 		if (pd) {
-			const id   = pd.dataset.id;
-			const wrap = document.getElementById('price-edit-' + id);
-			if (wrap && wrap.style.display === 'none') {
-				wrap.style.display = 'block';
-				wrap.querySelector('input').focus();
+			const id  = pd.dataset.id;
+			const inp = document.getElementById('price-edit-' + id);
+			if (inp && inp.style.display === 'none') {
+				pd.style.display = 'none';
+				inp.style.display = 'inline';
+				inp.focus(); inp.select();
 			}
 			return;
 		}
 		// List price
 		const ld = e.target.closest('.list-price-display');
 		if (ld) {
-			const id   = ld.dataset.id;
-			const wrap = document.getElementById('list-price-edit-' + id);
-			if (wrap && wrap.style.display === 'none') {
-				wrap.style.display = 'block';
-				wrap.querySelector('input').focus();
+			const id  = ld.dataset.id;
+			const inp = document.getElementById('list-price-edit-' + id);
+			if (inp && inp.style.display === 'none') {
+				ld.style.display = 'none';
+				inp.style.display = 'inline';
+				inp.focus(); inp.select();
 			}
 			return;
 		}
 		// Stock
 		const sd = e.target.closest('.stock-display');
 		if (sd) {
-			const id   = sd.dataset.id;
-			const wrap = document.getElementById('stock-edit-' + id);
-			if (wrap && wrap.style.display === 'none') {
+			const id  = sd.dataset.id;
+			const inp = document.getElementById('stock-edit-' + id);
+			if (inp && inp.style.display === 'none') {
 				sd.style.display = 'none';
-				wrap.style.display = 'inline-flex';
-				wrap.querySelector('input').focus();
+				inp.style.display = 'inline';
+				inp.focus(); inp.select();
 			}
+			return;
 		}
+		// Hamburger menu toggle
+		const menuBtn = e.target.closest('.row-menu-btn');
+		if (menuBtn) {
+			e.stopPropagation();
+			const drop = menuBtn.nextElementSibling;
+			const isOpen = drop.style.display !== 'none';
+			// Close all open menus first
+			document.querySelectorAll('.row-menu-drop').forEach(d => d.style.display = 'none');
+			drop.style.display = isOpen ? 'none' : 'block';
+			return;
+		}
+		// Close menus on any other click
+		document.querySelectorAll('.row-menu-drop').forEach(d => d.style.display = 'none');
+	});
+
+	// Close menus when clicking outside
+	document.addEventListener('click', function () {
+		document.querySelectorAll('.row-menu-drop').forEach(d => d.style.display = 'none');
+	});
+
+	// Enter key commits eip
+	tbody.addEventListener('keydown', function (e) {
+		if (e.key !== 'Enter') return;
+		const input = e.target.closest('.eip-input');
+		if (input) { e.preventDefault(); input.blur(); }
 	});
 
 	// Blur: save whichever field was edited
@@ -183,22 +211,20 @@
 		if (pi) {
 			const id    = pi.dataset.id;
 			const price = parseFloat(pi.value || 0);
-			const wrap  = document.getElementById('price-edit-' + id);
-			if (wrap) wrap.style.display = 'none';
+			pi.style.display = 'none';
 			const pd = tbody.querySelector('.price-display[data-id="' + id + '"]');
-			if (pd) pd.textContent = '$' + price.toFixed(2);
+			if (pd) { pd.textContent = '$' + price.toFixed(2); pd.style.display = 'inline'; }
 			const res = await post({ action: 'save_prices', id, price, list_price: currentListPrice(id) });
 			if (!res.ok) notifyErr(res.message);
 		}
 		// List price blur
 		const li = e.target.closest('.price-input[data-field="list_price"]');
 		if (li) {
-			const id       = li.dataset.id;
-			const listPr   = parseFloat(li.value || 0);
-			const wrap     = document.getElementById('list-price-edit-' + id);
-			if (wrap) wrap.style.display = 'none';
+			const id     = li.dataset.id;
+			const listPr = parseFloat(li.value || 0);
+			li.style.display = 'none';
 			const ld = tbody.querySelector('.list-price-display[data-id="' + id + '"]');
-			if (ld) ld.textContent = '$' + listPr.toFixed(2);
+			if (ld) { ld.textContent = '$' + listPr.toFixed(2); ld.style.display = 'inline'; }
 			const res = await post({ action: 'save_prices', id, price: currentPrice(id), list_price: listPr });
 			if (!res.ok) notifyErr(res.message);
 		}
@@ -207,27 +233,41 @@
 		if (si) {
 			const id    = si.dataset.id;
 			const stock = parseInt(si.value || 0);
-			const wrap  = document.getElementById('stock-edit-' + id);
-			if (wrap) wrap.style.display = 'none';
+			si.style.display = 'none';
 			const sd = tbody.querySelector('.stock-display[data-id="' + id + '"]');
-			if (sd) { sd.textContent = stock; sd.className = 'stock-display ' + stockClass(stock); sd.style.display = ''; }
+			if (sd) { sd.textContent = stock; sd.className = 'stock-display ' + stockClass(stock); sd.style.display = 'inline'; }
 			const res = await post({ action: 'save_stock', id, stock });
 			if (!res.ok) notifyErr(res.message);
 		}
 	}, true);
 
 	function currentPrice(id) {
-		const input = tbody.querySelector('.price-input[data-field="price"][data-id="' + id + '"]');
-		if (input) return parseFloat(input.value || 0);
+		const inp  = document.getElementById('price-edit-' + id);
+		if (inp)  return parseFloat(inp.value || 0);
 		const span = tbody.querySelector('.price-display[data-id="' + id + '"]');
 		return span ? parseFloat(span.textContent.replace('$','') || 0) : 0;
 	}
 	function currentListPrice(id) {
-		const input = tbody.querySelector('.price-input[data-field="list_price"][data-id="' + id + '"]');
-		if (input) return parseFloat(input.value || 0);
+		const inp  = document.getElementById('list-price-edit-' + id);
+		if (inp)  return parseFloat(inp.value || 0);
 		const span = tbody.querySelector('.list-price-display[data-id="' + id + '"]');
 		return span ? parseFloat(span.textContent.replace('$','') || 0) : 0;
 	}
+
+	// ── Clone via hamburger ───────────────────────────────────────────────────
+	tbody.addEventListener('click', async function (e) {
+		const cloneBtn = e.target.closest('.clone-btn');
+		if (!cloneBtn) return;
+		document.querySelectorAll('.row-menu-drop').forEach(d => d.style.display = 'none');
+		const id  = cloneBtn.dataset.id;
+		const res = await post({ action: 'clone', id });
+		if (!res.ok) { notifyErr(res.message); return; }
+		emptyRow.style.display = 'none';
+		const newTr = buildRow(res.row);
+		if (newTr) tbody.appendChild(newTr);
+		notifyOk(res.message);
+		updateBulkBtn();
+	});
 
 	// ── Category checkboxes ───────────────────────────────────────────────────
 	function renderCatList(selectedIds) {
@@ -258,9 +298,7 @@
 		const input = document.getElementById('quick-cat-name');
 		const name  = input.value.trim();
 		if (!name) { notifyErr('Enter a category name.'); return; }
-		this.disabled = true;
 		const res = await post({ action: 'quick_add_category', name });
-		this.disabled = false;
 		if (!res.ok) { notifyErr(res.message); return; }
 		allCategories.push(res.category);
 		const selected = getSelectedCatIds();
@@ -285,32 +323,68 @@
 	const imgFileInput = document.getElementById('img-file-input');
 	const imgGrid      = document.getElementById('img-grid');
 
-	let pendingImages  = []; // { file, url, isPrimary }
+	let pendingImages  = []; // { file, url, isPrimary, id? }
+	let imgDragSrcIdx  = null;
 
 	function renderImageGrid() {
 		imgGrid.innerHTML = '';
 		pendingImages.forEach(function (img, idx) {
 			const div = document.createElement('div');
-			div.className = 'img-thumb' + (img.isPrimary ? ' is-primary' : '');
+			div.className   = 'img-thumb' + (img.isPrimary ? ' is-primary' : '');
 			div.dataset.idx = idx;
+			div.draggable   = true;
 			div.innerHTML =
-				'<img src="' + img.url + '" alt="">' +
+				'<img src="' + img.url + '" alt="" draggable="false">' +
 				(img.isPrimary ? '<div class="img-primary-label">Primary</div>' : '') +
 				'<button type="button" class="img-thumb-del" data-idx="' + idx + '">&times;</button>';
+
+			// Set primary on click (not delete button)
 			div.addEventListener('click', function (e) {
 				if (e.target.classList.contains('img-thumb-del')) return;
-				pendingImages.forEach(i => i.isPrimary = false);
+				pendingImages.forEach(function (i) { i.isPrimary = false; });
 				img.isPrimary = true;
 				renderImageGrid();
 			});
+
+			// Delete
 			div.querySelector('.img-thumb-del').addEventListener('click', function (e) {
 				e.stopPropagation();
 				pendingImages.splice(idx, 1);
-				if (pendingImages.length && !pendingImages.some(i => i.isPrimary)) {
+				if (pendingImages.length && !pendingImages.some(function (i) { return i.isPrimary; })) {
 					pendingImages[0].isPrimary = true;
 				}
 				renderImageGrid();
 			});
+
+			// Drag reorder — index based
+			div.addEventListener('dragstart', function (e) {
+				imgDragSrcIdx = idx;
+				this.classList.add('img-dragging');
+				e.dataTransfer.effectAllowed = 'move';
+			});
+			div.addEventListener('dragend', function () {
+				this.classList.remove('img-dragging');
+				imgGrid.querySelectorAll('.img-thumb').forEach(function (t) { t.classList.remove('img-drag-over'); });
+				imgDragSrcIdx = null;
+			});
+			div.addEventListener('dragover', function (e) {
+				e.preventDefault();
+				imgGrid.querySelectorAll('.img-thumb').forEach(function (t) { t.classList.remove('img-drag-over'); });
+				if (imgDragSrcIdx !== null && idx !== imgDragSrcIdx) {
+					this.classList.add('img-drag-over');
+				}
+			});
+			div.addEventListener('drop', function (e) {
+				e.preventDefault();
+				this.classList.remove('img-drag-over');
+				if (imgDragSrcIdx === null || idx === imgDragSrcIdx) return;
+				// Reorder array
+				const moved = pendingImages.splice(imgDragSrcIdx, 1)[0];
+				pendingImages.splice(idx, 0, moved);
+				imgDragSrcIdx = null;
+				renderImageGrid();
+			});
+
 			imgGrid.appendChild(div);
 		});
 	}
@@ -325,17 +399,36 @@
 	}
 
 	// Click to browse
-	imgDropZone.addEventListener('click', () => imgFileInput.click());
+	imgDropZone.addEventListener('click', function () { imgFileInput.click(); });
 	imgFileInput.addEventListener('change', function () { addImageFiles(this.files); this.value = ''; });
 
-	// Drag/drop
+	document.getElementById('btn-open-fm')?.addEventListener('click', function () {
+		if (!window.openFilePicker) return;
+		window.openFilePicker(function (items) {
+			items.forEach(function (item) {
+				// Avoid duplicates
+				if (pendingImages.some(function (i) { return i.db_path === item.db_path; })) return;
+				pendingImages.push({ url: item.url, db_path: item.db_path, isPrimary: pendingImages.length === 0 });
+			});
+			renderImageGrid();
+		});
+	});
+
+	// Drag/drop files onto drop zone
 	let imgDragCount = 0;
-	imgDropZone.addEventListener('dragenter', function (e) { e.preventDefault(); imgDragCount++; this.classList.add('drag-over'); });
-	imgDropZone.addEventListener('dragleave', function ()  { imgDragCount--; if (imgDragCount <= 0) { imgDragCount = 0; this.classList.remove('drag-over'); } });
-	imgDropZone.addEventListener('dragover',  function (e) { e.preventDefault(); });
-	imgDropZone.addEventListener('drop',      function (e) {
+	imgDropZone.addEventListener('dragenter', function (e) {
+		e.preventDefault(); imgDragCount++;
+		this.classList.add('drag-over');
+	});
+	imgDropZone.addEventListener('dragleave', function () {
+		imgDragCount--;
+		if (imgDragCount <= 0) { imgDragCount = 0; this.classList.remove('drag-over'); }
+	});
+	imgDropZone.addEventListener('dragover', function (e) { e.preventDefault(); });
+	imgDropZone.addEventListener('drop', function (e) {
 		e.preventDefault(); imgDragCount = 0; this.classList.remove('drag-over');
-		addImageFiles(e.dataTransfer.files);
+		// Only handle file drops, not thumb reorders
+		if (e.dataTransfer.files.length) addImageFiles(e.dataTransfer.files);
 	});
 
 	// ── Drawer open/close ─────────────────────────────────────────────────────
@@ -368,14 +461,17 @@
 
 	function resetDrawer() {
 		currentProdId = null;
-		document.getElementById('prod-id').value         = '';
-		document.getElementById('prod-name').value       = '';
-		document.getElementById('prod-sku').value        = '';
-		document.getElementById('prod-price').value      = '';
-		document.getElementById('prod-list-price').value = '';
-		document.getElementById('prod-stock').value      = '0';
-		document.getElementById('prod-desc').value       = '';
-		document.getElementById('quick-cat-name').value  = '';
+		document.getElementById('prod-id').value              = '';
+		document.getElementById('prod-name').value            = '';
+		document.getElementById('prod-sku').value             = '';
+		document.getElementById('prod-price').value           = '';
+		document.getElementById('prod-list-price').value      = '';
+		document.getElementById('prod-stock').value           = '0';
+		document.getElementById('prod-desc').value            = '';
+		document.getElementById('prod-seo-title').value       = '';
+		document.getElementById('prod-seo-keywords').value    = '';
+		document.getElementById('prod-seo-description').value = '';
+		document.getElementById('quick-cat-name').value       = '';
 		if (window._trumbProdDone) jQuery('#prod-desc-long').trumbowyg('html', '');
 		else document.getElementById('prod-desc-long').value = '';
 		setTogVal('prod-active',   1);
@@ -404,13 +500,16 @@
 		const d = res.row;
 		currentProdId = d.id;
 
-		document.getElementById('prod-id').value         = d.id;
-		document.getElementById('prod-name').value       = d.name;
-		document.getElementById('prod-sku').value        = (d.sku || '').toUpperCase();
-		document.getElementById('prod-price').value      = parseFloat(d.price || 0).toFixed(2);
-		document.getElementById('prod-list-price').value = parseFloat(d.list_price || 0).toFixed(2);
-		document.getElementById('prod-stock').value      = d.stock;
-		document.getElementById('prod-desc').value       = d.description || '';
+		document.getElementById('prod-id').value              = d.id;
+		document.getElementById('prod-name').value            = d.name;
+		document.getElementById('prod-sku').value             = (d.sku || '').toUpperCase();
+		document.getElementById('prod-price').value           = parseFloat(d.price || 0).toFixed(2);
+		document.getElementById('prod-list-price').value      = parseFloat(d.list_price || 0).toFixed(2);
+		document.getElementById('prod-stock').value           = d.stock;
+		document.getElementById('prod-desc').value            = d.description || '';
+		document.getElementById('prod-seo-title').value       = d.seo_title || '';
+		document.getElementById('prod-seo-keywords').value    = d.seo_keywords || '';
+		document.getElementById('prod-seo-description').value = d.seo_description || '';
 
 		if (window._trumbProdDone) jQuery('#prod-desc-long').trumbowyg('html', d.description_long || '');
 		else document.getElementById('prod-desc-long').value = d.description_long || '';
@@ -438,7 +537,7 @@
 	});
 
 	// ── Save ──────────────────────────────────────────────────────────────────
-	document.getElementById('btn-drawer-save').addEventListener('click', async function () {
+	debounceBtn(document.getElementById('btn-drawer-save'), async function () {
 		const nameEl = document.getElementById('prod-name');
 		if (!nameEl.reportValidity()) return;
 
@@ -446,7 +545,6 @@
 			? jQuery('#prod-desc-long').trumbowyg('html')
 			: document.getElementById('prod-desc-long').value;
 
-		this.disabled = true;
 
 		// First save the product record
 		const res = await post({
@@ -462,10 +560,16 @@
 			free_shipping:    togVal('prod-free-ship'),
 			description:      document.getElementById('prod-desc').value,
 			description_long: descLong,
+			seo_title:        document.getElementById('prod-seo-title').value,
+			seo_keywords:     document.getElementById('prod-seo-keywords').value,
+			seo_description:  document.getElementById('prod-seo-description').value,
 			category_ids:     JSON.stringify(getSelectedCatIds()),
 		});
 
-		if (!res.ok) { this.disabled = false; notifyErr(res.message); return; }
+		if (!res.ok) {
+			notifyErr(res.message);
+			return;
+		}
 
 		// Upload any new images
 		const newImages = pendingImages.filter(i => i.file);
@@ -479,7 +583,6 @@
 			}, { image: img.file });
 		}
 
-		this.disabled = false;
 		notifyOk(res.message);
 		updateRow(res.row);
 		closeDrawer();
@@ -535,9 +638,7 @@
 	btnBulk.addEventListener('click', async function () {
 		const ids = Array.from(tbody.querySelectorAll('.row-chk:checked')).map(c => c.dataset.id);
 		if (!ids.length) return;
-		this.disabled = true;
 		const res = await post({ action: 'bulk_delete', ids: JSON.stringify(ids) });
-		this.disabled = false;
 		if (!res.ok) { notifyErr(res.message); return; }
 		ids.forEach(function (id) {
 			const tr = tbody.querySelector('tr[data-id="' + id + '"]');
@@ -597,5 +698,359 @@
 
 	// ── Init ──────────────────────────────────────────────────────────────────
 	Promise.all([fetchRowTemplate(), loadProducts(), loadCategories()]);
+
+	// ── Drawer scroll indicator ───────────────────────────────────────────────
+	(function () {
+		const drawerContent = document.getElementById('prod-drawer-content');
+		const indicator     = document.getElementById('prod-scroll-indicator');
+		if (!drawerContent || !indicator) return;
+
+		function checkOverflow() {
+			const detailsActive = document.getElementById('panel-details')?.classList.contains('active');
+			const overflows = drawerContent.scrollHeight > drawerContent.clientHeight + 10;
+			const atBottom  = drawerContent.scrollTop + drawerContent.clientHeight >= drawerContent.scrollHeight - 20;
+			indicator.classList.toggle('hidden', !detailsActive || !overflows || atBottom);
+		}
+
+		const drawerEl = document.getElementById('prod-drawer');
+		if (drawerEl && window.MutationObserver) {
+			new MutationObserver(checkOverflow).observe(drawerEl, { attributes: true, attributeFilter: ['class'] });
+		}
+		drawerContent.addEventListener('scroll', checkOverflow);
+		drawerContent.addEventListener('focusin', function (e) {
+			if (e.target.tagName === 'TEXTAREA' || e.target.classList.contains('trumbowyg-editor')) {
+				indicator.classList.add('hidden');
+			}
+		});
+		// Re-check when tabs switch
+		document.querySelectorAll('.drawer-tab').forEach(function (btn) {
+			btn.addEventListener('click', function () { setTimeout(checkOverflow, 50); });
+		});
+		window.addEventListener('resize', checkOverflow);
+	}());
+
+	// ── AI helpers ────────────────────────────────────────────────────────────
+	async function aiGenerate(prompt) {
+		var key = (NC.deepaiKey || '').trim();
+		if (!key) {
+			notifyErr('DeepAI API key not set. Add it in Settings \u2192 Options \u2192 AI.');
+			return null;
+		}
+		var fd = new FormData();
+		fd.append('text', prompt);
+		try {
+			var res  = await fetch('https://api.deepai.org/api/text-generator', {
+				method: 'POST',
+				headers: { 'api-key': key },
+				body: fd,
+			});
+			var data = await res.json();
+			if (data.err) { notifyErr('AI error: ' + data.err); return null; }
+			return (data.output || '').trim();
+		} catch (e) {
+			notifyErr('AI request failed: ' + e.message);
+			return null;
+		}
+	}
+
+	function prodName() {
+		return document.getElementById('prod-name').value.trim();
+	}
+
+	// Short description
+	document.getElementById('btn-prod-ai-short')?.addEventListener('click', async function () {
+		var name = prodName();
+		if (!name) { notifyErr('Enter a product name first.'); return; }
+		this.disabled = true; this.textContent = '\u2728 Generating\u2026';
+		var result = await aiGenerate(
+			'Write a short, compelling 1-2 sentence product description (plain text, no HTML, no heading) for a product called "' + name + '".'
+		);
+		this.disabled = false; this.textContent = '\u2728 AI';
+		if (result) document.getElementById('prod-desc').value = result;
+	});
+
+	// Long description
+	document.getElementById('btn-prod-ai-long')?.addEventListener('click', async function () {
+		var name  = prodName();
+		var short = document.getElementById('prod-desc').value.trim();
+		if (!name) { notifyErr('Enter a product name first.'); return; }
+		this.disabled = true; this.textContent = '\u2728 Generating\u2026';
+		var ctx    = short ? ' The short description is: ' + short : '';
+		var result = await aiGenerate(
+			'Write a detailed HTML product description (3-5 sentences, use <p> tags, no heading) for a product called "' + name + '".' + ctx
+		);
+		this.disabled = false; this.textContent = '\u2728 AI';
+		if (!result) return;
+		if (window._trumbProdDone) jQuery('#prod-desc-long').trumbowyg('html', result);
+		else document.getElementById('prod-desc-long').value = result;
+	});
+
+	// All SEO fields
+	document.getElementById('btn-prod-ai-seo')?.addEventListener('click', async function () {
+		var name = prodName();
+		if (!name) { notifyErr('Enter a product name first.'); return; }
+		this.disabled = true; this.textContent = '\u2728 Generating\u2026';
+		var result = await aiGenerate(
+			'For a product named "' + name + '", provide ONLY a JSON object (no markdown, no explanation) with: ' +
+			'seo_title (page title under 70 chars), ' +
+			'seo_keywords (comma-separated, max 150 chars), ' +
+			'seo_description (meta description under 160 chars).'
+		);
+		this.disabled = false; this.textContent = '\u2728 Generate All SEO';
+		if (!result) return;
+		try {
+			var obj = JSON.parse(result.replace(/```json|```/g, '').trim());
+			if (obj.seo_title)       document.getElementById('prod-seo-title').value       = obj.seo_title;
+			if (obj.seo_keywords)    document.getElementById('prod-seo-keywords').value    = obj.seo_keywords;
+			if (obj.seo_description) document.getElementById('prod-seo-description').value = obj.seo_description;
+		} catch (e) {
+			notifyErr('AI returned unexpected format. Try again.');
+		}
+	});
+
+	// ── Product Options tab ─────────────────────────────────────────────────────
+	const optSearchInput   = document.getElementById('opt-search-input');
+	const optSearchResults = document.getElementById('opt-search-results');
+	const poList           = document.getElementById('product-options-list');
+
+	// Load options when Options tab is activated
+	document.querySelector('.drawer-tab[data-panel="options"]')?.addEventListener('click', function () {
+		const productId = document.getElementById('prod-id')?.value;
+		if (productId) loadProductOptions(productId);
+	});
+
+	async function loadProductOptions(productId) {
+		if (!poList) return;
+		const res = await ajax({ action: 'list_options', product_id: productId });
+		if (!res.ok) return;
+		poList.innerHTML = '';
+		(res.product_options || []).forEach(po => poList.appendChild(buildPoCard(po)));
+	}
+
+	function buildPoCard(po) {
+		const card = document.createElement('div');
+		card.className = 'po-card';
+		card.dataset.poId = po.id;
+		card.setAttribute('role', 'listitem');
+
+		const CHOICE = ['select','radio','checkbox','toggle'];
+		const isChoice = CHOICE.includes(po.type);
+
+		// ── Head ──
+		const head = document.createElement('div');
+		head.className = 'po-card-head';
+		head.setAttribute('aria-expanded', 'false');
+
+		const toggle = document.createElement('span');
+		toggle.className = 'po-card-toggle';
+		toggle.textContent = '▶';
+		toggle.setAttribute('aria-hidden', 'true');
+
+		const nameEl = document.createElement('span');
+		nameEl.className = 'po-card-name';
+		nameEl.textContent = po.label || po.option_name;
+
+		const typeEl = document.createElement('span');
+		typeEl.className = 'po-card-type';
+		typeEl.textContent = po.type;
+
+		// Required toggle
+		const reqWrap = document.createElement('label');
+		reqWrap.className = 'po-card-required';
+		reqWrap.innerHTML = '<ios-toggle size="sm" ' + (po.required ? 'checked' : '') + ' aria-label="Required"></ios-toggle><span>Required</span>';
+		reqWrap.querySelector('ios-toggle')?.addEventListener('ios-toggle', async function (e) {
+			e.stopPropagation();
+			await ajax({ action: 'save_option', po_id: po.id, label: po.label || '', required: e.detail.checked ? 1 : 0 });
+		});
+
+		// Remove (delete-in-place)
+		const dip = document.createElement('delete-in-place');
+		dip.setAttribute('caption', '🗑');
+		dip.setAttribute('confirm', 'Remove option?');
+		dip.dataset.poId = po.id;
+		dip.addEventListener('dip-confirm', async function () {
+			card.style.transition = 'opacity .3s';
+			card.style.opacity = '0';
+			const res = await ajax({ action: 'remove_option', po_id: po.id });
+			if (!res.ok) { card.style.opacity = '1'; notifyErr(res.message); return; }
+			setTimeout(() => card.remove(), 320);
+		});
+
+		head.appendChild(toggle);
+		head.appendChild(nameEl);
+		head.appendChild(typeEl);
+		head.appendChild(reqWrap);
+		head.appendChild(dip);
+
+		// ── Body ──
+		const body = document.createElement('div');
+		body.className = 'po-card-body';
+
+		// Label override (edit-in-place)
+		const labelWrap = document.createElement('div');
+		labelWrap.className = 'po-label-field';
+		labelWrap.innerHTML = '<label>Label (overrides "' + esc(po.option_name) + '" for this product)</label>';
+		const labelInput = document.createElement('input');
+		labelInput.type  = 'text';
+		labelInput.value = po.label || '';
+		labelInput.placeholder = po.option_name;
+		labelInput.setAttribute('aria-label', 'Option label override');
+		async function saveLabel() {
+			po.label = labelInput.value.trim();
+			nameEl.textContent = po.label || po.option_name;
+			await ajax({ action: 'save_option', po_id: po.id, label: po.label, required: po.required || 0 });
+		}
+		labelInput.addEventListener('blur', saveLabel);
+		labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveLabel(); } });
+		labelWrap.appendChild(labelInput);
+		body.appendChild(labelWrap);
+
+		// Value rows (choice types only)
+		if (isChoice && po.values) {
+			po.values.forEach(v => body.appendChild(buildPovRow(v)));
+		}
+
+		// Toggle open/close
+		head.addEventListener('click', function (e) {
+			if (e.target.closest('delete-in-place') || e.target.closest('ios-toggle') || e.target.closest('label')) return;
+			card.classList.toggle('open');
+			toggle.textContent = card.classList.contains('open') ? '▼' : '▶';
+			head.setAttribute('aria-expanded', String(card.classList.contains('open')));
+		});
+
+		card.appendChild(head);
+		card.appendChild(body);
+		return card;
+	}
+
+	function buildPovRow(v) {
+		const row = document.createElement('div');
+		row.className = 'po-value-row';
+		row.dataset.povId = v.id;
+
+		// Enabled toggle
+		const enabledToggle = document.createElement('ios-toggle');
+		enabledToggle.className = 'po-value-enabled';
+		enabledToggle.setAttribute('size', 'sm');
+		enabledToggle.setAttribute('aria-label', 'Enable ' + v.value_text);
+		if (v.enabled == 1) enabledToggle.setAttribute('checked', '');
+
+		// Name
+		const nameEl = document.createElement('span');
+		nameEl.className = 'po-value-name' + (v.enabled == 0 ? ' disabled' : '');
+		nameEl.textContent = v.value_text;
+
+		// Label override
+		const labelIn = document.createElement('input');
+		labelIn.type        = 'text';
+		labelIn.className   = 'po-value-label-input';
+		labelIn.value       = v.label || '';
+		labelIn.placeholder = 'Label…';
+		labelIn.setAttribute('aria-label', 'Value label override for ' + v.value_text);
+
+		// Price modifier
+		const prefixSel = document.createElement('select');
+		prefixSel.className = 'po-value-prefix';
+		prefixSel.setAttribute('aria-label', 'Price modifier sign');
+		prefixSel.innerHTML = '<option value="+">+</option><option value="-">−</option>';
+		prefixSel.value = v.price_prefix || '+';
+
+		const priceIn = document.createElement('input');
+		priceIn.type      = 'number';
+		priceIn.className = 'po-value-price-input';
+		priceIn.value     = parseFloat(v.price_modifier || 0).toFixed(2);
+		priceIn.min       = '0';
+		priceIn.step      = '0.01';
+		priceIn.setAttribute('aria-label', 'Price modifier for ' + v.value_text);
+
+		// Stock
+		const stockIn = document.createElement('input');
+		stockIn.type      = 'number';
+		stockIn.className = 'po-value-stock-input';
+		stockIn.value     = v.stock || 0;
+		stockIn.min       = '0';
+		stockIn.setAttribute('aria-label', 'Stock for ' + v.value_text);
+
+		async function savePov() {
+			await ajax({
+				action:          'save_option_value',
+				pov_id:          v.id,
+				label:           labelIn.value.trim(),
+				price_prefix:    prefixSel.value,
+				price_modifier:  priceIn.value,
+				weight_prefix:   '+',
+				weight_modifier: 0,
+				stock:           stockIn.value,
+				subtract_stock:  0,
+				enabled:         enabledToggle.checked ? 1 : 0,
+			});
+		}
+
+		enabledToggle.addEventListener('ios-toggle', async function (e) {
+			nameEl.classList.toggle('disabled', !e.detail.checked);
+			await savePov();
+		});
+		[labelIn, priceIn, stockIn, prefixSel].forEach(el => {
+			el.addEventListener('change', savePov);
+			if (el.tagName === 'INPUT') el.addEventListener('blur', savePov);
+		});
+
+		const priceWrap = document.createElement('div');
+		priceWrap.className = 'po-value-price';
+		priceWrap.appendChild(prefixSel);
+		priceWrap.appendChild(priceIn);
+
+		row.appendChild(enabledToggle);
+		row.appendChild(nameEl);
+		row.appendChild(labelIn);
+		row.appendChild(priceWrap);
+		row.appendChild(stockIn);
+		return row;
+	}
+
+	// ── Option autocomplete ─────────────────────────────────────────────────────
+	let acTimer = null;
+
+	async function showOptions(q) {
+		const res = await ajax({ action: 'search_options', q: q || '' });
+		if (!res.ok) return;
+		optSearchResults.innerHTML = '';
+		if (!res.rows.length) { optSearchResults.style.display = 'none'; return; }
+		res.rows.forEach(function (r) {
+			const li = document.createElement('li');
+			li.setAttribute('role', 'option');
+			li.innerHTML = esc(r.name) + '<span class="opt-autocomplete-type">' + esc(r.type) + '</span>';
+			li.addEventListener('mousedown', async function (e) {
+				e.preventDefault(); // prevent blur before click fires
+				optSearchResults.style.display = 'none';
+				optSearchInput.value = '';
+				const productId = document.getElementById('prod-id')?.value;
+				if (!productId) return;
+				const addRes = await ajax({ action: 'add_option', product_id: productId, option_id: r.id });
+				if (!addRes.ok) { notifyErr(addRes.message); return; }
+				poList.appendChild(buildPoCard(addRes.product_option));
+			});
+			optSearchResults.appendChild(li);
+		});
+		optSearchResults.style.display = '';
+	}
+
+	// Show all on focus
+	optSearchInput?.addEventListener('focus', function () { showOptions(''); });
+
+	// Filter on type
+	optSearchInput?.addEventListener('input', function () {
+		clearTimeout(acTimer);
+		const q = this.value.trim();
+		acTimer = setTimeout(() => showOptions(q), 200);
+	});
+
+	optSearchInput?.addEventListener('blur', function () {
+		setTimeout(() => { if (optSearchResults) optSearchResults.style.display = 'none'; }, 200);
+	});
+
+	function esc(str) {
+		return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+	}
 
 })();

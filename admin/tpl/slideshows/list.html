@@ -1,0 +1,73 @@
+{extends file="../layout.html"}
+
+{block name="head"}
+<link rel="stylesheet" href="{$url_admin_real}css/categories.css">
+<link rel="stylesheet" href="{$url_admin_real}css/slideshows.css">
+{/block}
+
+{block name="content"}
+<div class="nc-toolbar">
+	<button class="btn btn-primary" id="btn-add-slideshow">+ Add Slideshow</button>
+</div>
+
+<div id="ss-empty" style="display:none">
+	<p class="nc-empty">No slideshows yet. <button class="btn btn-primary btn-sm" id="btn-add-first">Create your first slideshow</button></p>
+</div>
+
+<div id="ss-list"></div>
+
+<div id="drawer-overlay"></div>
+
+<me-drawer id="ss-drawer">
+	<drawer-head>
+		<h2 id="drawer-title">Add Slideshow</h2>
+		<button class="drawer-close" id="drawer-close" aria-label="Close">&times;</button>
+	</drawer-head>
+	<drawer-content>
+		<input type="hidden" id="ss-id">
+
+		<div class="df">
+			<label for="ss-name">Name <span class="field-required">*</span></label>
+			<input type="text" id="ss-name" maxlength="255">
+		</div>
+		<div class="df-row">
+			<div class="df">
+				<label for="ss-transition">Transition</label>
+				<select id="ss-transition">
+					<option value="fade">Fade</option>
+					<option value="slide">Slide</option>
+				</select>
+			</div>
+			<div class="df">
+				<label for="ss-interval">Interval (ms)</label>
+				<input type="number" id="ss-interval" value="5000" min="1000" step="500">
+			</div>
+		</div>
+		<div class="df-toggle">
+			<label>Active</label>
+			<edge-toggle id="ss-status"></edge-toggle>
+		</div>
+
+		<div class="df-section" style="margin-top:1rem">Slides</div>
+		<div id="slides-list" role="list"></div>
+		<button class="btn btn-secondary btn-sm" id="btn-add-slide" style="margin-top:.5rem">+ Add Slide</button>
+
+	</drawer-content>
+	<drawer-foot>
+		<button class="btn btn-primary" id="btn-drawer-save">Save Slideshow</button>
+		<button class="btn btn-secondary" id="btn-drawer-cancel">Cancel</button>
+	</drawer-foot>
+</me-drawer>
+{/block}
+
+{block name="scripts"}
+<script>
+var NC = { adminUrl: '{$url_admin}', rootUrl: '{$url_root}', adminReal: '{$url_admin_real}' };
+</script>
+<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="{$url_root}js/vendor/ios-toggle.js"></script>
+<script src="{$url_root}js/vendor/delete-in-place.js"></script>
+<script src="{$url_admin_real}js/filemanager.js"></script>
+<script src="{$url_admin_real}js/slideshows.js"></script>
+{/block}

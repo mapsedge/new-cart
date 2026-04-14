@@ -1,0 +1,276 @@
+{extends file="layout.html"}
+
+{block name="title"}Checkout — {$site_name}{/block}
+
+{block name="head"}
+{if $stripe_key}
+<script src="https://js.stripe.com/v3/"></script>
+{/if}
+{/block}
+
+{block name="content"}
+<div class="page-head"><h1>Checkout</h1></div>
+
+<div class="checkout-layout">
+
+	{* ── Left: forms ── *}
+	<div>
+
+		{* Contact *}
+		<div class="checkout-section">
+			<div class="checkout-section-head">Contact</div>
+			<div class="checkout-field">
+				<label for="co-email">Email <span class="field-required">*</span></label>
+				<input type="email" id="co-email" autocomplete="email" required>
+			</div>
+		</div>
+
+		{* Shipping address *}
+		<div class="checkout-section">
+			<div class="checkout-section-head">Shipping Address</div>
+			<div class="checkout-field-row">
+				<div class="checkout-field">
+					<label for="co-first">First Name <span class="field-required">*</span></label>
+					<input type="text" id="co-first" autocomplete="given-name" required>
+				</div>
+				<div class="checkout-field">
+					<label for="co-last">Last Name <span class="field-required">*</span></label>
+					<input type="text" id="co-last" autocomplete="family-name" required>
+				</div>
+			</div>
+			<div class="checkout-field">
+				<label for="co-addr1">Address <span class="field-required">*</span></label>
+				<input type="text" id="co-addr1" autocomplete="address-line1" required>
+			</div>
+			<div class="checkout-field">
+				<label for="co-addr2">Apartment, suite, etc.</label>
+				<input type="text" id="co-addr2" autocomplete="address-line2">
+			</div>
+			<div class="checkout-field-row">
+				<div class="checkout-field">
+					<label for="co-city">City <span class="field-required">*</span></label>
+					<input type="text" id="co-city" autocomplete="address-level2" required>
+				</div>
+				<div class="checkout-field" style="flex:0 0 90px">
+					<label for="co-state">State <span class="field-required">*</span></label>
+					<input type="text" id="co-state" autocomplete="address-level1" maxlength="32" required>
+				</div>
+				<div class="checkout-field" style="flex:0 0 110px">
+					<label for="co-zip">ZIP <span class="field-required">*</span></label>
+					<input type="text" id="co-zip" autocomplete="postal-code" maxlength="20" required>
+				</div>
+			</div>
+			<div class="checkout-field">
+				<label for="co-country">Country</label>
+				<select id="co-country" autocomplete="country">
+					<option value="US">United States</option>
+					<option value="CA">Canada</option>
+					<option value="GB">United Kingdom</option>
+					<option value="AU">Australia</option>
+				</select>
+			</div>
+			<button class="btn btn-secondary btn-sm" id="btn-get-rates" type="button">
+				Get Shipping Rates
+			</button>
+		</div>
+
+		{* Shipping rates *}
+		<div class="checkout-section" id="section-shipping" style="display:none">
+			<div class="checkout-section-head">Shipping</div>
+			<div class="shipping-rates" id="shipping-rates-list" role="radiogroup">
+				{* populated by JS *}
+			</div>
+		</div>
+
+		{* Payment *}
+		<div class="checkout-section" id="section-payment" style="display:none">
+			<div class="checkout-section-head">Payment</div>
+
+			{if $payment_methods|count > 1}
+			<div style="margin-bottom:1rem">
+				{foreach $payment_methods as $pm}
+				<label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer">
+					<input type="radio" name="payment_method" value="{$pm.id|escape}"
+					       {if $pm@first}checked{/if}>
+					{$pm.label|escape}
+				</label>
+				{/foreach}
+			</div>
+			{/if}
+
+			{if $stripe_key}
+			<div id="stripe-payment-element"></div>
+			<div id="stripe-error" role="alert"></div>
+			{/if}
+
+			<button class="btn btn-primary btn-lg" id="btn-place-order" style="width:100%">
+				Place Order
+			</button>
+		</div>
+
+	</div>
+
+	{* ── Right: order summary ── *}
+	<div class="order-summary-card">
+		<div class="order-summary-head">Order Summary</div>
+		{foreach $items as $item}
+		<div class="order-summary-item">
+			<span>{$item.product.name|escape}
+				{if $item.qty > 1} &times;{$item.qty}{/if}
+			</span>
+			<span>{$site_currency}{$item.line_total|string_format:"%.2f"}</span>
+		</div>
+		{/foreach}
+		<hr class="order-summary-divider">
+		<div class="order-summary-item">
+			<span>Subtotal</span>
+			<span>{$subtotal}</span>
+		</div>
+		<div class="order-summary-item" id="summary-shipping" style="display:none">
+			<span>Shipping</span>
+			<span id="summary-shipping-price">—</span>
+		</div>
+		<hr class="order-summary-divider">
+		<div class="order-summary-total">
+			<span>Total</span>
+			<span id="summary-total">{$subtotal}</span>
+		</div>
+	</div>
+
+</div>
+{/block}
+
+{block name="scripts"}
+<script>
+{literal}
+var STRIPE_PUBLISHABLE_KEY = '{$stripe_key|escape}';
+var CART_CURRENCY          = '{$site_currency_code|default:"usd"|escape}';
+var CART_SUBTOTAL          = {$subtotal_raw|floatval};
+var CART_AMOUNT_CENTS      = 0; // set after shipping selected
+var ORDER_ID               = 0;
+var THANKYOU_URL           = '{$url_root}order-complete';
+{/literal}
+</script>
+{if $stripe_key}
+<script src="{$url_root}plugins/stripe/catalog/stripe-checkout.js"></script>
+{/if}
+<script>
+(function () {
+'use strict';
+
+const val = id => document.getElementById(id)?.value?.trim() || '';
+
+let selectedRate = null;
+
+// ── Get shipping rates ─────────────────────────────────────────────────────
+debounceBtn(document.getElementById('btn-get-rates'), async function () {
+	const fd = new FormData();
+	fd.append('action',     'shipping_rates');
+	fd.append('email',      val('co-email'));
+	fd.append('first_name', val('co-first'));
+	fd.append('last_name',  val('co-last'));
+	fd.append('address1',   val('co-addr1'));
+	fd.append('address2',   val('co-addr2'));
+	fd.append('city',       val('co-city'));
+	fd.append('state',      val('co-state'));
+	fd.append('zip',        val('co-zip'));
+	fd.append('country',    val('co-country'));
+
+	if (!val('co-email') || !val('co-first') || !val('co-addr1') || !val('co-zip')) {
+		SimpleNotification.error({ text: 'Please fill in your contact and address details first.' });
+		return;
+	}
+
+	const res  = await fetch('/?route=checkout', { method: 'POST', body: fd });
+	const data = await res.json();
+	if (!data.ok) { SimpleNotification.error({ text: data.message || 'Could not fetch rates.' }); return; }
+
+	renderRates(data.rates);
+	document.getElementById('section-shipping').style.display = '';
+	document.getElementById('section-payment').style.display  = '';
+});
+
+function renderRates(rates) {
+	const list = document.getElementById('shipping-rates-list');
+	list.innerHTML = '';
+	rates.forEach(function (r, i) {
+		const label = document.createElement('label');
+		label.className = 'shipping-rate-opt';
+		label.innerHTML =
+			'<input type="radio" name="shipping_rate" value="' + i + '"' + (i === 0 ? ' checked' : '') + '>' +
+			'<span class="shipping-rate-info">' +
+				'<span class="shipping-rate-name">' + esc(r.carrier ? r.carrier + ' — ' + r.service : r.service) + '</span>' +
+				(r.days ? '<span class="shipping-rate-days">Est. ' + r.days + ' day(s)</span>' : '') +
+			'</span>' +
+			'<span class="shipping-rate-price">' + (r.rate > 0 ? '{$site_currency}' + r.rate.toFixed(2) : 'Free') + '</span>';
+		label.querySelector('input').addEventListener('change', function () {
+			selectRate(r);
+		});
+		list.appendChild(label);
+	});
+	if (rates.length > 0) selectRate(rates[0]);
+}
+
+function selectRate(r) {
+	selectedRate = r;
+	const shipping = r.rate || 0;
+	const total    = CART_SUBTOTAL + shipping;
+	CART_AMOUNT_CENTS = Math.round(total * 100);
+
+	const shippingRow   = document.getElementById('summary-shipping');
+	const shippingPrice = document.getElementById('summary-shipping-price');
+	const totalEl       = document.getElementById('summary-total');
+
+	if (shippingRow)   shippingRow.style.display = '';
+	if (shippingPrice) shippingPrice.textContent = shipping > 0 ? '{$site_currency}' + shipping.toFixed(2) : 'Free';
+	if (totalEl)       totalEl.textContent = '{$site_currency}' + total.toFixed(2);
+}
+
+// ── Place order ────────────────────────────────────────────────────────────
+debounceBtn(document.getElementById('btn-place-order'), async function () {
+	if (!selectedRate) {
+		SimpleNotification.error({ text: 'Please select a shipping method.' });
+		return;
+	}
+
+	const fd = new FormData();
+	fd.append('action',       'place_order');
+	fd.append('email',        val('co-email'));
+	fd.append('first_name',   val('co-first'));
+	fd.append('last_name',    val('co-last'));
+	fd.append('address1',     val('co-addr1'));
+	fd.append('address2',     val('co-addr2'));
+	fd.append('city',         val('co-city'));
+	fd.append('state',        val('co-state'));
+	fd.append('zip',          val('co-zip'));
+	fd.append('country',      val('co-country'));
+	fd.append('ship_rate_id', selectedRate.id || '');
+	fd.append('ship_price',   selectedRate.rate || 0);
+	fd.append('ship_label',   selectedRate.service || '');
+	fd.append('shippo_token', selectedRate.shippo_token || '');
+
+	const res  = await fetch('/?route=checkout', { method: 'POST', body: fd });
+	const data = await res.json();
+	if (!data.ok) { SimpleNotification.error({ text: data.message || 'Could not place order.' }); return; }
+
+	ORDER_ID           = data.order_id;
+	CART_AMOUNT_CENTS  = data.total_cents;
+	THANKYOU_URL       = data.thankyou_url;
+
+	// If Stripe is selected, initStripe() from stripe-checkout.js handles payment
+	const pm = document.querySelector('input[name=payment_method]:checked')?.value;
+	if (pm === 'stripe' && window.initStripe) {
+		window.initStripe();
+	} else {
+		// Non-Stripe: go straight to thank you
+		window.location.href = THANKYOU_URL;
+	}
+});
+
+function esc(str) {
+	return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+})();
+</script>
+{/block}

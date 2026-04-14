@@ -54,6 +54,14 @@ class Hook {
 		return $default;
 	}
 
+	// ── Filter — passes value through all listeners, each may modify it ────────
+	public static function filter(string $event, mixed $value, mixed $context = null): mixed {
+		foreach (self::$listeners[$event] ?? [] as $fn) {
+			$value = $fn($value, $context);
+		}
+		return $value;
+	}
+
 	// ── Check if :instead is registered ───────────────────────────────────────
 	public static function hasInstead(string $base): bool {
 		return isset(self::$instead[$base]);
@@ -87,11 +95,15 @@ class Hook {
 			'catalog.cart.remove',
 			'catalog.cart.update',
 			'catalog.checkout',
+			'catalog.checkout.shipping_rates',   // filter: [{service,rate,days,carrier}]
+			'catalog.checkout.payment_methods',  // filter: [{id,label,icon}]
 			'catalog.checkout.shipping',
 			'catalog.checkout.payment',
 			'catalog.checkout.confirm',
 			'catalog.order.create',
 			'catalog.order.complete',
+			'catalog.order.payment_complete',    // action: order confirmed by gateway
+			'catalog.order.label_generate',      // action: shipping label requested
 			'catalog.customer.login',
 			'catalog.customer.register',
 			'catalog.customer.logout',

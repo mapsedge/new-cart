@@ -40,6 +40,11 @@
 	function buildRow(p) {
 		const tr = document.createElement('tr');
 		tr.dataset.code = p.code;
+		const settingsBtn = (p.has_settings && p.enabled)
+			? '<a class="btn btn-secondary btn-sm plugin-settings-btn" ' +
+			  'href="' + NC.adminUrl + '?route=setup#sub-integrations" ' +
+			  'aria-label="Settings for ' + esc(p.name) + '">&#9881; Settings</a>'
+			: '';
 		tr.innerHTML =
 			'<td>' +
 				'<div class="plugin-name">' + esc(p.name) + '</div>' +
@@ -48,6 +53,7 @@
 			'</td>' +
 			'<td class="plugin-author">' + esc(p.author) + '</td>' +
 			'<td class="plugin-link">' + (p.link ? '<a href="' + esc(p.link) + '" target="_blank" rel="noopener">' + esc(p.link) + '</a>' : '—') + '</td>' +
+			'<td class="col-settings">' + settingsBtn + '</td>' +
 			'<td class="col-toggle">' +
 				'<ios-toggle ' + (p.enabled ? 'checked' : '') + ' data-code="' + esc(p.code) + '" data-action="toggle" size="sm"></ios-toggle>' +
 			'</td>' +

@@ -1,0 +1,130 @@
+{extends file="layout.html"}
+
+{block name="title"}{$wl.name|escape} — {$site_name}{/block}
+
+{block name="content"}
+<div class="page-head">
+	<h1>{$wl.name|escape}</h1>
+	{if $is_mine}
+	<div class="wl-share">
+		<span>Share this list:</span>
+		<input type="text" class="wl-share-url" readonly
+		       value="{$url_root}wishlist/{$wl.token|escape}"
+		       aria-label="Shareable link">
+		<button class="btn btn-secondary btn-sm" id="btn-copy-wl">Copy Link</button>
+	</div>
+	{/if}
+</div>
+
+{if $items}
+<div class="product-grid" id="wl-grid">
+	{foreach $items as $item}
+	<div class="product-card wl-item" data-product-id="{$item.id}">
+		<a href="{$url_root}product/{$item.slug|escape}" class="product-card-img-link">
+			<div class="product-card-img">
+				{if $item.image}
+					<img src="{$item.image|escape}" alt="{$item.name|escape}" loading="lazy">
+				{else}
+					<div class="product-card-no-image" aria-hidden="true">&#128247;</div>
+				{/if}
+			</div>
+		</a>
+		<div class="product-card-body">
+			<a class="product-card-name" href="{$url_root}product/{$item.slug|escape}">{$item.name|escape}</a>
+			<div class="product-card-price">{$site_currency}{$item.price|string_format:"%.2f"}</div>
+			{if $is_mine}
+			<button class="btn btn-secondary btn-sm wl-remove-btn" style="margin-top:.5rem"
+			        data-product-id="{$item.id}"
+			        data-token="{$wl.token|escape}"
+			        aria-label="Remove {$item.name|escape} from wish list">
+				Remove
+			</button>
+			{/if}
+		</div>
+	</div>
+	{/foreach}
+</div>
+
+{if $is_mine && !$wl.email}
+<div class="wl-persist-email" id="wl-email-box">
+	<h3>Save your wish list</h3>
+	<p>Enter your email to recover this list if you clear your cookies.</p>
+	<div style="display:flex;gap:.5rem;flex-wrap:wrap">
+		<input type="email" id="wl-email-input" placeholder="your@email.com"
+		       aria-label="Email address to persist wish list">
+		<button class="btn btn-primary" id="btn-wl-email">Save</button>
+	</div>
+	<div id="wl-email-msg" aria-live="polite" style="margin-top:.4rem;font-size:.88rem"></div>
+</div>
+{/if}
+
+{else}
+<div class="empty-state">
+	<div class="empty-state-icon">&#10084;</div>
+	<h2>This wish list is empty</h2>
+	{if $is_mine}<p><a href="{$url_root}">Continue shopping</a> to add items.</p>{/if}
+</div>
+{/if}
+{/block}
+
+{block name="scripts"}
+<script>
+{literal}
+(function() {
+'use strict';
+const token = '{$wl.token|escape}';
+
+// ── Copy link ──────────────────────────────────────────────────────────────────
+document.getElementById('btn-copy-wl')?.addEventListener('click', function() {
+	const input = document.querySelector('.wl-share-url');
+	if (input) {
+		navigator.clipboard?.writeText(input.value).then(() => {
+			this.textContent = 'Copied!';
+			setTimeout(() => this.textContent = 'Copy Link', 2000);
+		});
+	}
+});
+
+// ── Remove items ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.wl-remove-btn').forEach(function(btn) {
+	btn.addEventListener('click', async function() {
+		const productId = this.dataset.productId;
+		const card = this.closest('.wl-item');
+		if (card) { card.style.transition='opacity .3s'; card.style.opacity='0'; }
+		const fd = new FormData();
+		fd.append('action', 'remove');
+		fd.append('token',  token);
+		fd.append('product_id', productId);
+		const res = await fetch('/?route=wishlist', {method:'POST',body:fd}).then(r=>r.json());
+		if (res.ok) {
+			setTimeout(() => card?.remove(), 320);
+		} else {
+			if (card) card.style.opacity='1';
+		}
+	});
+});
+
+// ── Persist email ──────────────────────────────────────────────────────────────
+document.getElementById('btn-wl-email')?.addEventListener('click', async function() {
+	const email = document.getElementById('wl-email-input')?.value.trim();
+	const msg   = document.getElementById('wl-email-msg');
+	if (!email) return;
+	const fd = new FormData();
+	fd.append('action', 'persist_email');
+	fd.append('token',  token);
+	fd.append('email',  email);
+	const res = await fetch('/?route=wishlist',{method:'POST',body:fd}).then(r=>r.json());
+	if (res.ok) {
+		msg.textContent = 'Email saved. Your list is now recoverable.';
+		msg.style.color = '#16a34a';
+		document.getElementById('wl-email-box').style.opacity = '.6';
+		this.disabled = true;
+	} else {
+		msg.textContent = res.message || 'Could not save email.';
+		msg.style.color = '#dc2626';
+	}
+});
+})();
+{/literal}
+</script>
+{/block}

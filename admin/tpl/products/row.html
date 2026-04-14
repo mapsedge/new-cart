@@ -5,23 +5,15 @@
 </td>
 <td><div class="prod-cats">{{categories}}</div></td>
 <td class="col-price">
-	<div class="price-display-wrap">
-		<span class="price-cell price-display" data-id="{{id}}" data-field="price" title="Click to edit">{{price}}</span>
-		<span class="price-sep"> / </span>
-		<span class="price-cell list-price-display" data-id="{{id}}" data-field="list_price" title="Click to edit">{{list_price}}</span>
-	</div>
-	<div class="price-edit-wrap" id="price-edit-{{id}}" style="display:none">
-		<input type="number" min="0" step="0.01" class="price-input" data-field="price" data-id="{{id}}" value="{{price_raw}}" placeholder="Price">
-	</div>
-	<div class="list-price-edit-wrap" id="list-price-edit-{{id}}" style="display:none">
-		<input type="number" min="0" step="0.01" class="price-input" data-field="list_price" data-id="{{id}}" value="{{list_price_raw}}" placeholder="List Price">
-	</div>
+	<span class="price-cell price-display" data-id="{{id}}" data-field="price" title="Click to edit">{{price}}</span><!--
+	--><span class="price-sep"> / </span><!--
+	--><span class="price-cell list-price-display" data-id="{{id}}" data-field="list_price" title="Click to edit">{{list_price}}</span>
+	<input type="number" min="0" step="0.01" class="price-input eip-input" data-field="price" data-id="{{id}}" value="{{price_raw}}" placeholder="Price" id="price-edit-{{id}}" style="display:none">
+	<input type="number" min="0" step="0.01" class="price-input eip-input" data-field="list_price" data-id="{{id}}" value="{{list_price_raw}}" placeholder="List" id="list-price-edit-{{id}}" style="display:none">
 </td>
 <td class="col-stock">
-	<span class="stock-display {{stock_class}}" data-id="{{id}}" title="Click to edit">{{stock}}</span>
-	<span class="stock-edit-wrap" id="stock-edit-{{id}}" style="display:none">
-		<input type="number" min="0" step="1" class="stock-input" data-id="{{id}}" value="{{stock}}">
-	</span>
+	<span class="stock-display {{stock_class}}" data-id="{{id}}" title="Click to edit">{{stock}}</span><!--
+	--><input type="number" min="0" step="1" class="stock-input eip-input" data-id="{{id}}" value="{{stock}}" id="stock-edit-{{id}}" style="display:none">
 </td>
 <td class="col-active">
 	<ios-toggle {{status_checked}} size="sm" data-id="{{id}}" data-field="status"></ios-toggle>
@@ -33,6 +25,14 @@
 	<span class="delete-fade {{delete_show}}" id="prod-del-{{id}}">
 		<delete-in-place caption="&#128465;" confirm="Delete?" data-id="{{id}}"></delete-in-place>
 	</span>
+</td>
+<td class="col-menu">
+	<div class="row-menu" data-id="{{id}}">
+		<button class="row-menu-btn" title="More actions">&#8942;</button>
+		<div class="row-menu-drop" style="display:none">
+			<button class="row-menu-item clone-btn" data-id="{{id}}">&#128203; Clone</button>
+		</div>
+	</div>
 </td>
 <td class="col-check">
 	<input type="checkbox" class="row-chk" data-id="{{id}}" {{chk_disabled}}>

@@ -3,7 +3,7 @@
 {block name="title"}Products — {$site_name|escape}{/block}
 
 {block name="head"}
-<link rel="stylesheet" href="/admin/css/products.css">
+<link rel="stylesheet" href="{$url_admin_real}css/products.css">
 {/block}
 
 {block name="content"}
@@ -24,12 +24,13 @@
 			<th class="col-active">Active</th>
 			<th class="col-toggle">Featured</th>
 			<th class="col-delete"></th>
+			<th class="col-menu"></th>
 			<th class="col-check"><input type="checkbox" id="chk-all" title="Select all"></th>
 		</tr>
 	</thead>
 	<tbody id="prod-tbody">
 		<tr id="prod-empty-row">
-			<td colspan="9">
+			<td colspan="10">
 				<div class="nc-empty">
 					<p>No products yet.</p>
 					<button class="btn btn-primary" id="btn-add-first">Add your first product</button>
@@ -47,35 +48,37 @@
 		<button class="drawer-close" id="drawer-close">&times;</button>
 	</drawer-head>
 
-	<drawer-content>
+	<drawer-content id="prod-drawer-content">
 		<input type="hidden" id="prod-id" value="">
 
-		<div class="drawer-tabs">
-			<button class="drawer-tab active" data-panel="details">Details</button>
-			<button class="drawer-tab" data-panel="images">Images</button>
-			<button class="drawer-tab" data-panel="options">Options</button>
+		<div class="drawer-tabs" role="tablist" aria-label="Product sections">
+			<button class="drawer-tab active" data-panel="details" role="tab" aria-selected="true"  aria-controls="panel-details">Details</button>
+			<button class="drawer-tab"        data-panel="images"  role="tab" aria-selected="false" aria-controls="panel-images">Images</button>
+			<button class="drawer-tab"        data-panel="seo"     role="tab" aria-selected="false" aria-controls="panel-seo">SEO</button>
+			<button class="drawer-tab"        data-panel="options" role="tab" aria-selected="false" aria-controls="panel-options">Options</button>
 		</div>
 
 		{* ── Details tab ── *}
-		<div class="drawer-tab-panel active" id="panel-details">
+		<div class="drawer-tab-panel active" id="panel-details" role="tabpanel">
 
 			<div class="df">
-				<label for="prod-name">Product Name <span class="field-required">*</span></label>
-				<input type="text" id="prod-name" maxlength="255" required>
+				<label for="prod-name">Product Name <span class="field-required" aria-hidden="true">*</span></label>
+				<input type="text" id="prod-name" maxlength="255" required
+				       aria-required="true" aria-label="Product name">
 			</div>
 
 			<div class="df-row">
 				<div class="df">
 					<label for="prod-sku">SKU</label>
-					<input type="text" id="prod-sku" maxlength="128" data-uppercase>
+					<input type="text" id="prod-sku" maxlength="128" data-uppercase aria-label="SKU">
 				</div>
 				<div class="df">
-					<label for="prod-price">Price <span class="field-required">*</span></label>
-					<input type="number" id="prod-price" min="0" step="0.01" required>
+					<label for="prod-price">Price <span class="field-required" aria-hidden="true">*</span></label>
+					<input type="number" id="prod-price" min="0" step="0.01" required aria-required="true" aria-label="Price">
 				</div>
 				<div class="df">
 					<label for="prod-list-price">List Price</label>
-					<input type="number" id="prod-list-price" min="0" step="0.01">
+					<input type="number" id="prod-list-price" min="0" step="0.01" aria-label="List price">
 					<div class="hint">Shown with "You save X%" when higher than price</div>
 				</div>
 			</div>
@@ -83,47 +86,55 @@
 			<div class="df-row">
 				<div class="df">
 					<label for="prod-stock">Stock</label>
-					<input type="number" id="prod-stock" min="0" step="1" value="0">
+					<input type="number" id="prod-stock" min="0" step="1" value="0" aria-label="Stock quantity">
 				</div>
 			</div>
 
 			<div class="df-section">Categories</div>
 
 			<div class="df">
-				<div class="cat-list" id="prod-cat-list">
+				<div class="cat-list" id="prod-cat-list" role="group" aria-label="Product categories">
 					<span style="color:var(--nc-text-dim);font-size:.83rem">Loading…</span>
 				</div>
 				<div class="quick-add-row">
-					<input type="text" id="quick-cat-name" placeholder="Add new category…" maxlength="255">
-					<button type="button" class="btn-icon" id="btn-quick-add-cat" title="Add category">+</button>
+					<input type="text" id="quick-cat-name" placeholder="Add new category…" maxlength="255" aria-label="New category name">
+					<button type="button" class="btn-icon" id="btn-quick-add-cat" title="Add category" aria-label="Add new category">+</button>
 				</div>
 			</div>
 
 			<div class="df-section">Description</div>
 
 			<div class="df">
-				<label for="prod-desc">Short Description</label>
-				<textarea id="prod-desc" rows="2"></textarea>
+				<div class="df-label-row">
+					<label for="prod-desc">Short Description</label>
+					<button type="button" class="btn-ai btn-xs" id="btn-prod-ai-short"
+					        aria-label="Generate short description with AI">&#10024; AI</button>
+				</div>
+				<textarea id="prod-desc" rows="2" aria-label="Short description"></textarea>
 			</div>
 
 			<div class="df">
-				<label for="prod-desc-long">Full Description</label>
-				<textarea id="prod-desc-long" rows="4"></textarea>
+				<div class="df-label-row">
+					<label for="prod-desc-long">Full Description</label>
+					<button type="button" class="btn-ai btn-xs" id="btn-prod-ai-long"
+					        aria-label="Generate full description with AI">&#10024; AI</button>
+				</div>
+				<textarea id="prod-desc-long" rows="4" aria-label="Full description"></textarea>
 			</div>
 
 			<div class="df-section">Options</div>
 
 			<div class="df-row">
 				<div class="df-toggle">
-					<ios-toggle id="prod-active" name="prod-active" size="sm" checked></ios-toggle>
+					<ios-toggle id="prod-active" name="prod-active" size="sm" checked aria-label="Active"></ios-toggle>
 					<label for="prod-active">Active</label>
 				</div>
 				<div class="df-toggle">
-					<ios-toggle id="prod-featured" name="prod-featured" size="sm"></ios-toggle>
+					<ios-toggle id="prod-featured" name="prod-featured" size="sm" aria-label="Featured"></ios-toggle>
 					<label for="prod-featured">Featured</label>
 				</div>
 				<div class="df-toggle">
-					<ios-toggle id="prod-free-ship" name="prod-free-ship" size="sm"></ios-toggle>
+					<ios-toggle id="prod-free-ship" name="prod-free-ship" size="sm" aria-label="Free shipping"></ios-toggle>
 					<label for="prod-free-ship">Free Shipping</label>
 				</div>
 			</div>
@@ -131,21 +142,68 @@
 		</div>{* /panel-details *}
 
 		{* ── Images tab ── *}
-		<div class="drawer-tab-panel" id="panel-images">
-			<div class="img-upload-zone" id="img-drop-zone">
+		<div class="drawer-tab-panel" id="panel-images" role="tabpanel">
+			<div class="img-upload-zone" id="img-drop-zone" role="button" tabindex="0"
+			     aria-label="Drop images here or click to browse">
 				<div>&#128247; Drop images here or click to browse</div>
-				<div style="font-size:.78rem;margin-top:.3rem">JPG, PNG or WebP. First image becomes primary.</div>
+				<div style="font-size:.78rem;margin-top:.3rem">JPG, PNG or WebP.</div>
 			</div>
-			<input type="file" id="img-file-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none">
-			<div class="img-grid" id="img-grid"></div>
-			<p class="hint" style="margin-top:.65rem">Click an image to set it as primary. Drag to reorder.</p>
+			<input type="file" id="img-file-input" accept="image/jpeg,image/png,image/webp" multiple
+			       style="display:none" aria-label="Upload product images">
+			<button type="button" class="btn btn-secondary btn-fm-picker" id="btn-open-fm"
+			        aria-label="Choose image from File Manager">&#128193; Choose from File Manager</button>
+			<div class="img-grid" id="img-grid" role="list" aria-label="Product images"></div>
+			<p class="hint" style="margin-top:.65rem">Images sorted by drag. First image is primary.</p>
+		</div>
+
+		{* ── SEO tab ── *}
+		<div class="drawer-tab-panel" id="panel-seo" role="tabpanel">
+			<div class="seo-panel-head">
+				<button type="button" class="btn btn-secondary btn-sm btn-ai-seo" id="btn-prod-ai-seo"
+				        aria-label="Generate all SEO fields with AI">&#10024; Generate All SEO</button>
+			</div>
+			<div class="df">
+				<label for="prod-seo-title">Page Title</label>
+				<input type="text" id="prod-seo-title" maxlength="300"
+				       placeholder="Defaults to product name if left blank"
+				       aria-label="SEO page title">
+			</div>
+			<div class="df">
+				<label for="prod-seo-keywords">Keywords</label>
+				<input type="text" id="prod-seo-keywords" maxlength="500"
+				       placeholder="comma, separated, keywords"
+				       aria-label="SEO keywords">
+			</div>
+			<div class="df">
+				<label for="prod-seo-description">Meta Description</label>
+				<textarea id="prod-seo-description" rows="3" maxlength="500"
+				          placeholder="Defaults to short description if left blank"
+				          aria-label="SEO meta description"></textarea>
+			</div>
 		</div>
 
 		{* ── Options tab ── *}
-		<div class="drawer-tab-panel" id="panel-options">
-			<p style="color:var(--nc-text-dim);font-size:.88rem;padding:.5rem 0">
-				Option groups will appear here once Options are configured.
-			</p>
+		<div class="drawer-tab-panel" id="panel-options" role="tabpanel">
+
+			{* Autocomplete to add an option *}
+			<div class="df" style="position:relative">
+				<label for="opt-search-input">Add Option</label>
+				<input type="text" id="opt-search-input" placeholder="Search options…"
+				       autocomplete="off" aria-label="Search and add option"
+				       aria-autocomplete="list" aria-controls="opt-search-results">
+				<ul id="opt-search-results" class="opt-autocomplete-list" role="listbox"
+				    aria-label="Option suggestions" style="display:none"></ul>
+			</div>
+
+			<div id="product-options-list" role="list" aria-label="Product options">
+				{* rendered by JS *}
+			</div>
+
+		</div>
+
+		<!-- Scroll indicator -->
+		<div class="drawer-scroll-indicator hidden" id="prod-scroll-indicator" aria-hidden="true">
+			<span class="drawer-scroll-chevron">&#8964;</span>
 		</div>
 
 	</drawer-content>
@@ -161,13 +219,16 @@
 {block name="scripts"}
 <script>
 var NC = {
-	adminUrl: '{$url_admin}',
-	rootUrl:  '{$url_root}'
+	adminUrl:  '{$url_admin}',
+	rootUrl:   '{$url_root}',
+	deepaiKey: '{$deepai_key|escape:"javascript"}'
 };
 </script>
-<link rel="stylesheet" href="/js/vendor/SimpleNotification/simpleNotification.min.css">
-<script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
-<script src="/js/vendor/ios-toggle.js"></script>
-<script src="/js/vendor/delete-in-place.js"></script>
-<script src="/admin/js/products.js"></script>
+<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
+<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="{$url_root}js/vendor/ios-toggle.js"></script>
+<script src="{$url_root}js/vendor/delete-in-place.js"></script>
+<link rel="stylesheet" href="{$url_admin_real}css/filemanager.css">
+<script src="{$url_admin_real}js/filemanager.js"></script>
+<script src="{$url_admin_real}js/products.js"></script>
 {/block}

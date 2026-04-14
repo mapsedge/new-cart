@@ -1,0 +1,50 @@
+/* ── Slideshows admin ── */
+.slideshow-card {
+	border: 1px solid var(--nc-border);
+	border-radius: var(--nc-radius);
+	padding: .65rem 1rem;
+	display: flex;
+	align-items: center;
+	gap: .75rem;
+	margin-bottom: .4rem;
+	cursor: pointer;
+	transition: background .15s;
+}
+.slideshow-card:hover { background: var(--nc-hover, #f8f9fa); }
+.slideshow-card-name { flex: 1; font-weight: 600; }
+.slideshow-card-meta { font-size: .8rem; color: var(--nc-text-dim); }
+
+.slide-row {
+	display: flex;
+	align-items: center;
+	gap: .65rem;
+	padding: .5rem .5rem;
+	border: 1px solid var(--nc-border);
+	border-radius: var(--nc-radius);
+	margin-bottom: .35rem;
+	background: var(--nc-bg);
+}
+.slide-thumb {
+	width: 56px;
+	height: 42px;
+	object-fit: cover;
+	border-radius: 3px;
+	flex-shrink: 0;
+	background: var(--nc-bg-alt);
+}
+.slide-thumb-placeholder {
+	width: 56px;
+	height: 42px;
+	background: var(--nc-bg-alt);
+	border: 1px dashed var(--nc-border);
+	border-radius: 3px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: .8rem;
+	color: var(--nc-text-dim);
+	flex-shrink: 0;
+}
+.slide-info { flex: 1; min-width: 0; }
+.slide-heading { font-size: .88rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slide-url { font-size: .78rem; color: var(--nc-text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>{block name="title"}{$page_title|default:'Admin'} — {$site_name|escape}{/block}</title>
-	<link rel="stylesheet" href="/admin/css/vars.css">
+	<link rel="stylesheet" href="{$url_admin_real}css/vars.css">
 	<style>
 		*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -358,6 +358,9 @@
 		<a href="{$url_admin}?route=options" data-label="Options" class="{if $p=='options'}active{/if}">
 			<span class="nav-icon">&#9881;</span><span class="nav-label">Options</span>
 		</a>
+		<a href="{$url_admin}?route=filemanager" data-label="File Manager" class="{if $p=='filemanager'}active{/if}">
+			<span class="nav-icon">&#128247;</span><span class="nav-label">File Manager</span>
+		</a>
 		<a href="{$url_admin}?route=discounts" data-label="Discounts" class="{if $p=='discounts'}active{/if}">
 			<span class="nav-icon">&#127991;</span><span class="nav-label">Discounts</span>
 		</a>
@@ -391,6 +394,15 @@
 		<a href="{$url_admin}?route=pages" data-label="Pages" class="{if $p=='pages'}active{/if}">
 			<span class="nav-icon">&#128196;</span><span class="nav-label">Pages</span>
 		</a>
+		<a href="{$url_admin}?route=menus" data-label="Menus" class="{if $p=='menus'}active{/if}">
+			<span class="nav-icon">&#9776;</span><span class="nav-label">Menus</span>
+		</a>
+		<a href="{$url_admin}?route=slideshows" data-label="Slideshows" class="{if $p=='slideshows'}active{/if}">
+			<span class="nav-icon">&#127777;</span><span class="nav-label">Slideshows</span>
+		</a>
+		<a href="{$url_admin}?route=messages" data-label="Messages" class="{if $p=='messages'}active{/if}">
+			<span class="nav-icon">&#9993;</span><span class="nav-label">Messages</span>
+		</a>
 		{/if}
 
 		{if $access == 254}
@@ -404,13 +416,14 @@
 
 	</nav>
 	<div id="sidebar-foot">
-		new-cart<br>
+		new-cart v1.5.4<br>
 		&copy; {$smarty.now|date_format:'%Y'} Map's Edge Creative
 	</div>
 </div>
 
 {* ── Main ── *}
-<div id="main">
+<div id="main" class="page-{$p}">{if $p=='filemanager'}
+	<style>#content { padding:0; display:flex; flex-direction:column; }</style>{/if}
 
 	<div id="content-header">
 		<h1>{block name="page_title"}{$page_title|default:''|escape}{/block}</h1>
@@ -480,14 +493,33 @@
 </script>
 {* ── JS ── *}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<link rel="stylesheet" href="/js/vendor/trumbowyg/trumbowyg.css">
-<script src="/js/vendor/trumbowyg/trumbowyg.js"></script>
+<script src="{$url_root}js/vendor/debounce-button.js"></script>
+<script src="{$url_root}js/vendor/password-field.js"></script>
+<link rel="stylesheet" href="{$url_root}js/vendor/trumbowyg/trumbowyg.css">
+<script src="{$url_root}js/vendor/trumbowyg/trumbowyg.js"></script>
 <script>
-if (window.jQuery) {
-	jQuery.trumbowyg.svgPath = '/js/vendor/trumbowyg/src/ui/icons.svg';
+/**
+ * debounceBtn — attaches a debounced click handler to a button.
+ * The button is never disabled. If clicked within `ms` of the previous
+ * click, the handler is not invoked. Default 1000ms.
+ */
+function debounceBtn(btn, handler, ms) {
+	ms = ms || 1000;
+	var last = 0;
+	btn.addEventListener('click', function (e) {
+		var now = Date.now();
+		if (now - last < ms) return;
+		last = now;
+		handler.call(this, e);
+	});
 }
 </script>
 {block name="scripts"}{/block}
+<script>
+if (window.jQuery) {
+	jQuery.trumbowyg.svgPath = NC.rootUrl + 'js/vendor/trumbowyg/src/ui/icons.svg';
+}
+</script>
 
 </body>
 </html>

@@ -28,13 +28,15 @@ if ($action === 'list') {
 
 // ── Save (insert or update) ────────────────────────────────────────────────────
 if ($action === 'save') {
-	$id        = (int)post('id');
-	$name      = trim(post('name'));
-	$parent_id = (int)post('parent_id');
-	$seo_title = trim(post('seo_title'));
-	$html_long = post('html_long');
-	$featured  = (int)(bool)post('featured');
-	$status    = (int)post('status'); // 0=Not Active, 1=Active, 2=Browse Only
+	$id              = (int)post('id');
+	$name            = trim(post('name'));
+	$parent_id       = (int)post('parent_id');
+	$seo_title       = trim(post('seo_title'));
+	$seo_keywords    = trim(post('seo_keywords'));
+	$seo_description = trim(post('seo_description'));
+	$html_long       = post('html_long');
+	$featured        = (int)(bool)post('featured');
+	$status          = (int)post('status'); // 0=Not Active, 1=Active, 2=Browse Only
 
 	if (!in_array($status, [0, 1, 2])) $status = 1;
 	if (!$name) out(false, 'Category name is required.');
@@ -48,22 +50,24 @@ if ($action === 'save') {
 
 	if ($id) {
 		DB::exec("UPDATE `{$p}categories` SET
-			name        = ?,
-			parent_id   = ?,
-			slug        = ?,
-			seo_title   = ?,
-			html_long   = ?,
-			featured    = ?,
-			status      = ?
+			name             = ?,
+			parent_id        = ?,
+			slug             = ?,
+			seo_title        = ?,
+			seo_keywords     = ?,
+			seo_description  = ?,
+			html_long        = ?,
+			featured         = ?,
+			status           = ?
 			WHERE id = ?",
-			[$name, $parent_id, $slug, $seo_title, $html_long, $featured, $status, $id]
+			[$name, $parent_id, $slug, $seo_title, $seo_keywords, $seo_description, $html_long, $featured, $status, $id]
 		);
 	} else {
 		$max = (int)DB::val("SELECT MAX(display_order) FROM `{$p}categories`");
 		$id  = DB::insert("INSERT INTO `{$p}categories`
-			(name, parent_id, slug, seo_title, html_long, featured, status, display_order)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-			[$name, $parent_id, $slug, $seo_title, $html_long, $featured, $status, $max + 1]
+			(name, parent_id, slug, seo_title, seo_keywords, seo_description, html_long, featured, status, display_order)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			[$name, $parent_id, $slug, $seo_title, $seo_keywords, $seo_description, $html_long, $featured, $status, $max + 1]
 		);
 	}
 

@@ -1,7 +1,40 @@
 {extends file="layout.html"}
 
-{block name="title"}Welcome — {$site_name}{/block}
+{block name="title"}Shop — {$site_name}{/block}
 
 {block name="content"}
-<h2>Welcome to {$site_name|escape}</h2>
+<div class="page-head">
+	<h1>All Products</h1>
+</div>
+
+{if $products}
+<div class="product-grid">
+	{foreach $products as $prod}
+	<a class="product-card" href="{$url_root}product/{$prod.slug|escape}" aria-label="{$prod.name|escape}">
+		<div class="product-card-img">
+			{if $prod.image}
+				<img src="{$prod.image|escape}" alt="{$prod.name|escape}" loading="lazy">
+			{else}
+				<div class="product-card-no-image" aria-hidden="true">&#128247;</div>
+			{/if}
+		</div>
+		<div class="product-card-body">
+			<div class="product-card-name">{$prod.name|escape}</div>
+			<div class="product-card-price">
+				{if $prod.list_price && $prod.list_price > $prod.price}
+					<span class="product-card-list-price">{$site_currency}{$prod.list_price|string_format:"%.2f"}</span>
+				{/if}
+				{$site_currency}{$prod.price|string_format:"%.2f"}
+			</div>
+		</div>
+	</a>
+	{/foreach}
+</div>
+{else}
+<div class="empty-state">
+	<div class="empty-state-icon">&#128247;</div>
+	<h2>No products yet</h2>
+	<p>Check back soon.</p>
+</div>
+{/if}
 {/block}
