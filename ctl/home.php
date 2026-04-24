@@ -1,15 +1,23 @@
 <?php
 $p = DB_PREFIX;
 
-// If a home page with blocks exists, use the page renderer
-$homePage = DB::row("SELECT id FROM `{$p}pages` WHERE slug='home' AND status=1");
+// Find the designated homepage: check home_page_id setting first,
+// then fall back to slug='home' for backwards compatibility.
+$home_page_id = (int)(DB::val("SELECT `value` FROM `{$p}settings` WHERE `key`='home_page_id'") ?? 0);
+
+if ($home_page_id) {
+	$homePage = DB::row("SELECT id, slug FROM `{$p}pages` WHERE id=?", [$home_page_id]);
+} else {
+	$homePage = DB::row("SELECT id, slug FROM `{$p}pages` WHERE slug='home'");
+}
+
 if ($homePage) {
-	$_GET['slug'] = 'home';
+	$_GET['slug'] = $homePage['slug'];
 	require DIR_CTL . 'page.php';
 	exit;
 }
 
-// Fallback: plain product grid
+// No home page built yet — fall back to plain product grid
 catalog_sidebar($smarty);
 
 $products = DB::rows(

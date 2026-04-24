@@ -1,7 +1,6 @@
 {extends file="../layout.html"}
 
 {block name="head"}
-<link rel="stylesheet" href="{$url_admin_real}css/categories.css">
 <link rel="stylesheet" href="{$url_admin_real}css/menus.css">
 {/block}
 
@@ -39,6 +38,9 @@
 				<label class="menu-role-label">
 					<input type="radio" name="menu-type" value="category_list"> Category List
 				</label>
+				<label class="menu-role-label">
+					<input type="radio" name="menu-type" value="related_products"> Related Products
+				</label>
 			</div>
 			<div class="menu-layout-group">
 				<span class="menu-meta-head">Layout:</span>
@@ -56,10 +58,15 @@
 			<div class="menu-items-toolbar">
 				<span class="items-heading">Categories</span>
 			</div>
-			<p class="section-hint">Uncheck categories to exclude them from the menu.</p>
+			<p class="section-hint">Check the categories you want to include in the menu.</p>
 			<div id="cat-list-checks" class="item-cats-list"></div>
 			<button class="btn btn-secondary btn-sm" id="btn-save-cat-list"
 			        style="margin-top:.65rem">Save</button>
+		</div>
+
+		{* ── Related Products info ── *}
+		<div id="section-related-products" style="display:none">
+			<p class="section-hint">This menu automatically displays products related to the active product on product pages. No configuration needed — manage related products in the product editor.</p>
 		</div>
 
 		{* ── Links / Pages items ── *}
@@ -129,9 +136,5 @@
 <script>
 var NC = { adminUrl: '{$url_admin}', rootUrl: '{$url_root}', adminReal: '{$url_admin_real}' };
 </script>
-<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
-<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
-<script src="{$url_root}js/vendor/ios-toggle.js"></script>
-<script src="{$url_root}js/vendor/delete-in-place.js"></script>
 <script src="{$url_admin_real}js/menus.js"></script>
 {/block}

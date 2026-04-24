@@ -31,7 +31,7 @@
 	function renderPlugins(plugins) {
 		tbody.innerHTML = '';
 		if (!plugins || !plugins.length) {
-			tbody.innerHTML = '<tr><td colspan="5"><div class="nc-empty">No plugins installed.</div></td></tr>';
+			tbody.innerHTML = '<tr><td colspan="6"><div class="nc-empty">No plugins installed.</div></td></tr>';
 			return;
 		}
 		plugins.forEach(p => tbody.appendChild(buildRow(p)));
@@ -40,10 +40,10 @@
 	function buildRow(p) {
 		const tr = document.createElement('tr');
 		tr.dataset.code = p.code;
-		const settingsBtn = (p.has_settings && p.enabled)
-			? '<a class="btn btn-secondary btn-sm plugin-settings-btn" ' +
-			  'href="' + NC.adminUrl + '?route=setup#sub-integrations" ' +
-			  'aria-label="Settings for ' + esc(p.name) + '">&#9881; Settings</a>'
+		const settingsBtn = (p.has_admin && p.enabled)
+			? '<button class="btn btn-secondary btn-sm plugin-settings-btn" ' +
+			  'data-code="' + esc(p.code) + '" data-name="' + esc(p.name) + '" ' +
+			  'aria-label="Settings for ' + esc(p.name) + '">&#9881; Settings</button>'
 			: '';
 		tr.innerHTML =
 			'<td>' +
@@ -58,7 +58,7 @@
 				'<ios-toggle ' + (p.enabled ? 'checked' : '') + ' data-code="' + esc(p.code) + '" data-action="toggle" size="sm"></ios-toggle>' +
 			'</td>' +
 			'<td class="col-delete">' +
-				'<delete-in-place caption="&#128465;" confirm="Remove plugin?" data-code="' + esc(p.code) + '"></delete-in-place>' +
+				'<delete-in-place caption="&#128465;" confirm="Remove plugin?" code="' + esc(p.code) + '"></delete-in-place>' +
 			'</td>';
 		return tr;
 	}
@@ -82,9 +82,66 @@
 		const tr = tbody.querySelector('tr[data-code="' + code + '"]');
 		if (tr) tr.remove();
 		if (!tbody.querySelector('tr[data-code]')) {
-			tbody.innerHTML = '<tr><td colspan="5"><div class="nc-empty">No plugins installed.</div></td></tr>';
+			tbody.innerHTML = '<tr><td colspan="6"><div class="nc-empty">No plugins installed.</div></td></tr>';
 		}
 		notifyOk(res.message);
+	});
+
+	// ── Settings drawer ───────────────────────────────────────────────────────
+	const settingsDrawer  = document.getElementById('plugin-settings-drawer');
+	const settingsTitle   = document.getElementById('plugin-settings-title');
+	const settingsBody    = document.getElementById('plugin-settings-body');
+	const settingsOverlay = document.getElementById('plugin-settings-overlay');
+
+	function openSettingsDrawer() {
+		settingsDrawer.classList.add('open');
+		settingsOverlay.style.display = 'block';
+	}
+	function closeSettingsDrawer() {
+		settingsDrawer.classList.remove('open');
+		settingsOverlay.style.display = 'none';
+		settingsBody.innerHTML = '';
+	}
+
+	document.getElementById('plugin-settings-close')?.addEventListener('click', closeSettingsDrawer);
+	settingsOverlay?.addEventListener('click', closeSettingsDrawer);
+
+	tbody.addEventListener('click', async function (e) {
+		const btn = e.target.closest('.plugin-settings-btn');
+		if (!btn) return;
+		const code = btn.dataset.code;
+		const name = btn.dataset.name;
+		settingsTitle.textContent = name + ' — Settings';
+		settingsBody.innerHTML = '<p style="color:var(--nc-text-dim);padding:.5rem 0">Loading…</p>';
+		openSettingsDrawer();
+
+		try {
+			const r    = await fetch(NC.adminUrl + '?route=' + encodeURIComponent(code), {
+				headers: { 'X-NC-Partial': '1' },
+				credentials: 'same-origin',
+			});
+			const html = await r.text();
+			const parser = new DOMParser();
+			const doc    = parser.parseFromString(html, 'text/html');
+			const content = doc.getElementById('content');
+			settingsBody.innerHTML = content ? content.innerHTML : '<p>Could not load settings.</p>';
+
+			// Re-execute page scripts from the partial
+			const scriptsWrap = doc.getElementById('page-scripts-wrap');
+			if (scriptsWrap) {
+				const loadedSrcs = new Set(
+					Array.from(document.querySelectorAll('script[src]')).map(s => s.src)
+				);
+				scriptsWrap.querySelectorAll('script').forEach(function (s) {
+					if (s.src && loadedSrcs.has(new URL(s.src, location.origin).href)) return;
+					const ns = document.createElement('script');
+					if (s.src) ns.src = s.src; else ns.textContent = s.textContent;
+					document.body.appendChild(ns);
+				});
+			}
+		} catch (err) {
+			settingsBody.innerHTML = '<p style="color:var(--nc-danger)">Failed to load settings.</p>';
+		}
 	});
 
 	// ── Upload ────────────────────────────────────────────────────────────────

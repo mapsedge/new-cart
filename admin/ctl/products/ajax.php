@@ -163,6 +163,7 @@ if ($action === 'delete') {
 	DB::exec("DELETE FROM `{$p}products` WHERE id = ?", [$id]);
 	DB::exec("DELETE FROM `{$p}categories_products` WHERE product_id = ?", [$id]);
 	DB::exec("DELETE FROM `{$p}product_images` WHERE product_id = ?", [$id]);
+	DB::exec("DELETE FROM `{$p}product_related` WHERE product_id = ? OR related_product_id = ?", [$id, $id]);
 	out(true, 'Product deleted.');
 }
 
@@ -176,6 +177,7 @@ if ($action === 'bulk_delete') {
 	DB::exec("DELETE FROM `{$p}products` WHERE id IN ({$placeholders})", $ids);
 	DB::exec("DELETE FROM `{$p}categories_products` WHERE product_id IN ({$placeholders})", $ids);
 	DB::exec("DELETE FROM `{$p}product_images` WHERE product_id IN ({$placeholders})", $ids);
+	DB::exec("DELETE FROM `{$p}product_related` WHERE product_id IN ({$placeholders}) OR related_product_id IN ({$placeholders})", array_merge($ids, $ids));
 	out(true, count($ids) . ' product' . (count($ids) === 1 ? '' : 's') . ' deleted.');
 }
 
@@ -269,19 +271,27 @@ if ($action === 'upload_image') {
 		};
 	}
 
-	// Max 1200px wide
+	// Resize using saved settings (img_resize_on_upload, img_orig_max, img_product_quality)
+	$_img_rows = DB::rows("SELECT `key`,`value` FROM `{$p}settings` WHERE `key` IN ('img_resize_on_upload','img_orig_max','img_product_quality')");
+	$_img_cfg  = [];
+	foreach ($_img_rows as $_r) $_img_cfg[$_r['key']] = $_r['value'];
+	$do_resize   = (bool)(int)($_img_cfg['img_resize_on_upload'] ?? 1);
+	$max_px      = max(200, (int)($_img_cfg['img_orig_max']        ?? 1200));
+	$quality     = max(1, min(100, (int)($_img_cfg['img_product_quality'] ?? 85)));
+	$png_quality = (int)round((100 - $quality) / 10); // 0–9 (inverted)
+
 	$srcW = imagesx($src); $srcH = imagesy($src);
-	if ($srcW > 1200) {
-		$newH   = (int)($srcH * 1200 / $srcW);
-		$resized = imagecreatetruecolor(1200, $newH);
-		imagecopyresampled($resized, $src, 0, 0, 0, 0, 1200, $newH, $srcW, $srcH);
+	if ($do_resize && $srcW > $max_px) {
+		$newH    = (int)($srcH * $max_px / $srcW);
+		$resized = imagecreatetruecolor($max_px, $newH);
+		imagecopyresampled($resized, $src, 0, 0, 0, 0, $max_px, $newH, $srcW, $srcH);
 		imagedestroy($src); $src = $resized;
 	}
 
 	$saved = match($mime) {
-		'image/jpeg' => imagejpeg($src, $dest, 85),
-		'image/png'  => imagepng($src, $dest, 6),
-		'image/webp' => imagewebp($src, $dest, 85),
+		'image/jpeg' => imagejpeg($src, $dest, $quality),
+		'image/png'  => imagepng($src, $dest, $png_quality),
+		'image/webp' => imagewebp($src, $dest, $quality),
 	};
 	imagedestroy($src);
 	if (!$saved) out(false, 'Could not save image.');
@@ -481,6 +491,71 @@ if ($action === 'save_option_value') {
 		 WHERE id=?",
 		[$label, $price_prefix, $price_mod, $weight_prefix, $weight_mod,
 		 $stock, $subtract, $enabled, $pov_id]
+	);
+	out(true, '');
+}
+
+// ── Search products (for related-products autocomplete) ──────────────────────
+if ($action === 'search_products') {
+	$q          = trim(post('q'));
+	$product_id = (int)post('product_id');
+	$params     = [];
+	$where      = 'WHERE 1';
+	if ($product_id) {
+		$where   .= ' AND p.id != ?';
+		$params[] = $product_id;
+	}
+	if ($q !== '') {
+		$like     = '%' . $q . '%';
+		$where   .= ' AND (p.name LIKE ? OR p.sku LIKE ?)';
+		$params[] = $like;
+		$params[] = $like;
+	}
+	$rows = DB::rows(
+		"SELECT p.id, p.name, p.sku FROM `{$p}products` p $where ORDER BY p.name ASC LIMIT 30",
+		$params
+	);
+	out(true, '', ['rows' => $rows]);
+}
+
+// ── List related products ─────────────────────────────────────────────────────
+if ($action === 'list_related') {
+	$product_id = (int)post('product_id');
+	$rows = DB::rows(
+		"SELECT p.id, p.name, p.sku
+		 FROM `{$p}product_related` pr
+		 JOIN `{$p}products` p ON p.id = pr.related_product_id
+		 WHERE pr.product_id = ?
+		 ORDER BY p.name ASC",
+		[$product_id]
+	);
+	out(true, '', ['rows' => $rows]);
+}
+
+// ── Add related product ───────────────────────────────────────────────────────
+if ($action === 'add_related') {
+	require_access(ACCESS_EDIT);
+	$product_id         = (int)post('product_id');
+	$related_product_id = (int)post('related_product_id');
+	if (!$product_id || !$related_product_id || $product_id === $related_product_id) {
+		out(false, 'Invalid products.');
+	}
+	DB::exec(
+		"INSERT IGNORE INTO `{$p}product_related` (product_id, related_product_id) VALUES (?, ?)",
+		[$product_id, $related_product_id]
+	);
+	$related = DB::row("SELECT id, name, sku FROM `{$p}products` WHERE id = ?", [$related_product_id]);
+	out(true, '', ['row' => $related]);
+}
+
+// ── Remove related product ────────────────────────────────────────────────────
+if ($action === 'remove_related') {
+	require_access(ACCESS_EDIT);
+	$product_id         = (int)post('product_id');
+	$related_product_id = (int)post('related_product_id');
+	DB::exec(
+		"DELETE FROM `{$p}product_related` WHERE product_id = ? AND related_product_id = ?",
+		[$product_id, $related_product_id]
 	);
 	out(true, '');
 }

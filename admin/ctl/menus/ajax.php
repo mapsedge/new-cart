@@ -44,7 +44,7 @@ if ($action === 'save_menu') {
 	$name      = trim(post('name'));
 	$menu_role = trim(post('menu_role'));
 	$menu_type = trim(post('menu_type'));
-	if (!in_array($menu_type, ['category_list','links_pages'])) $menu_type = 'links_pages';
+	if (!in_array($menu_type, ['category_list','links_pages','related_products'])) $menu_type = 'links_pages';
 	if (!$name) out(false, 'Name is required.');
 
 	// Enforce one menu per role

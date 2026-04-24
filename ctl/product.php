@@ -41,10 +41,54 @@ foreach ($product_options as &$po) {
 }
 unset($po);
 
-catalog_sidebar($smarty);
+// Related products + image display settings
+$_rel_settings    = [];
+$_rel_rows        = DB::rows("SELECT `key`, `value` FROM `{$p}settings` WHERE `key` IN ('img_related_size','related_max_items','img_product_width')");
+foreach ($_rel_rows as $_r) $_rel_settings[$_r['key']] = $_r['value'];
+$rel_thumb_size    = max(80,  (int)($_rel_settings['img_related_size']  ?? 200));
+$rel_max_items     = max(0,   (int)($_rel_settings['related_max_items'] ?? 0));
+$img_product_width = max(200, (int)($_rel_settings['img_product_width'] ?? 600));
 
-$smarty->assign('product',         $product);
-$smarty->assign('images',          $images);
-$smarty->assign('product_options', $product_options);
-$smarty->assign('page_type',       'product');
+$_rel_limit = $rel_max_items > 0 ? " LIMIT {$rel_max_items}" : '';
+$related_products = DB::rows(
+	"SELECT p.id, p.name, p.slug, p.price, p.list_price, p.description,
+	        (SELECT filename FROM `{$p}product_images`
+	         WHERE product_id = p.id AND is_primary = 1
+	         ORDER BY display_order ASC LIMIT 1) AS image
+	 FROM `{$p}product_related` pr
+	 JOIN `{$p}products` p ON p.id = pr.related_product_id
+	 WHERE pr.product_id = ? AND p.status > 0
+	 ORDER BY pr.display_order ASC, p.name ASC{$_rel_limit}",
+	[$product['id']]
+);
+
+// Load blocks from the Product system page (global blocks above/below product view)
+require_once DIR_LIB . 'page_block_helper.php';
+$_prod_sys = DB::row("SELECT id FROM `{$p}pages` WHERE slug='product' AND page_type='product' LIMIT 1");
+$product_blocks_above = [];
+$product_blocks_below = [];
+if ($_prod_sys) {
+	$_all_pblocks = hydrate_page_blocks((int)$_prod_sys['id'], $p, $smarty);
+	$pv_pos = PHP_INT_MAX;
+	foreach ($_all_pblocks as $i => $b) {
+		if ($b['block_type'] === 'product_view') { $pv_pos = $i; break; }
+	}
+	foreach ($_all_pblocks as $i => $b) {
+		if ($b['block_type'] === 'product_view') continue;
+		if ($i < $pv_pos) $product_blocks_above[] = $b;
+		else              $product_blocks_below[] = $b;
+	}
+}
+
+catalog_sidebar($smarty, $product['id']);
+
+$smarty->assign('product',               $product);
+$smarty->assign('images',                $images);
+$smarty->assign('product_options',       $product_options);
+$smarty->assign('related_products',      $related_products);
+$smarty->assign('rel_thumb_size',        $rel_thumb_size);
+$smarty->assign('img_product_width',     $img_product_width);
+$smarty->assign('product_blocks_above',  $product_blocks_above);
+$smarty->assign('product_blocks_below',  $product_blocks_below);
+$smarty->assign('page_type',             'product');
 $smarty->display('product.html');

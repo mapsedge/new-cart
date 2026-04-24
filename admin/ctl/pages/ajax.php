@@ -51,6 +51,14 @@ if ($action === 'save') {
 		$slug = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $title), '-'));
 	}
 
+	// System pages: lock slug to prevent changes
+	if ($id) {
+		$sys = DB::row("SELECT page_type, slug FROM `{$p}pages` WHERE id=?", [$id]);
+		if ($sys && $sys['page_type'] !== 'page') {
+			$slug = $sys['slug'];
+		}
+	}
+
 	// Ensure unique slug
 	$existing = DB::val(
 		"SELECT id FROM `{$p}pages` WHERE slug=? AND id!=?",
@@ -75,6 +83,23 @@ if ($action === 'save') {
 		);
 	}
 	$page = DB::row("SELECT * FROM `{$p}pages` WHERE id=?", [$id]);
+
+	// Update home_page_id setting if requested
+	$is_home = (int)post('is_home', 0);
+	if ($is_home) {
+		DB::exec(
+			"INSERT INTO `{$p}settings` (`key`,`value`) VALUES ('home_page_id',?)
+			 ON DUPLICATE KEY UPDATE `value`=?",
+			[(string)$id, (string)$id]
+		);
+	} else {
+		// If this page was the homepage and is being unchecked, clear the setting
+		$cur = DB::val("SELECT `value` FROM `{$p}settings` WHERE `key`='home_page_id'");
+		if ((int)$cur === $id) {
+			DB::exec("DELETE FROM `{$p}settings` WHERE `key`='home_page_id'");
+		}
+	}
+
 	out(true, 'Page saved.', ['page' => $page]);
 }
 
@@ -82,6 +107,8 @@ if ($action === 'save') {
 if ($action === 'delete') {
 	require_access(ACCESS_DELETE);
 	$id = (int)post('id');
+	$pg = DB::row("SELECT page_type FROM `{$p}pages` WHERE id=?", [$id]);
+	if ($pg && $pg['page_type'] !== 'page') out(false, 'System pages cannot be deleted.');
 	DB::exec("DELETE FROM `{$p}page_blocks` WHERE page_id=?", [$id]);
 	DB::exec("DELETE FROM `{$p}pages` WHERE id=?", [$id]);
 	out(true, 'Page deleted.');
@@ -99,12 +126,17 @@ if ($action === 'reorder') {
 // ── Save block ────────────────────────────────────────────────────────────────
 if ($action === 'save_block') {
 	require_access(ACCESS_EDIT);
+	try {
 	$id       = (int)post('id');
 	$page_id  = (int)post('page_id');
 	$type     = trim(post('block_type'));
 	$settings = post('settings', '{}');
 	$enabled  = (int)post('enabled', 1);
-	$cols     = max(1, min(4, (int)post('cols', 4)));
+	$cols      = max(1, min(4, (int)post('cols', 4)));
+	$col_start = max(1, min(4, (int)post('col_start', 1)));
+	$col_span  = max(1, min(4, (int)post('col_span',  $cols)));
+	$row       = max(0, (int)post('row', 0));
+	$row_span  = max(1, min(20, (int)post('row_span', 1)));
 
 	// Validate settings JSON — always return object, never array
 	$decoded = json_decode($settings, true);
@@ -116,27 +148,36 @@ if ($action === 'save_block') {
 
 	if ($id) {
 		DB::exec(
-			"UPDATE `{$p}page_blocks` SET block_type=?,settings=?,enabled=?,cols=? WHERE id=?",
-			[$type, $settings, $enabled, $cols, $id]
+			"UPDATE `{$p}page_blocks` SET block_type=?,settings=?,enabled=?,cols=?,col_start=?,col_span=?,`row`=?,row_span=? WHERE id=?",
+			[$type, $settings, $enabled, $cols, $col_start, $col_span, $row, $row_span, $id]
 		);
 	} else {
 		$max = (int)DB::val("SELECT MAX(display_order) FROM `{$p}page_blocks` WHERE page_id=?", [$page_id]);
 		$id  = DB::insert(
-			"INSERT INTO `{$p}page_blocks` (page_id,block_type,settings,display_order,enabled,cols)
-			 VALUES (?,?,?,?,?,?)",
-			[$page_id, $type, $settings, $max + 1, $enabled, $cols]
+			"INSERT INTO `{$p}page_blocks` (page_id,block_type,settings,display_order,enabled,cols,col_start,col_span,`row`,row_span)
+			 VALUES (?,?,?,?,?,?,?,?,?,?)",
+			[$page_id, $type, $settings, $max + 1, $enabled, $cols, $col_start, $col_span, $row, $row_span]
 		);
 	}
 	$block = DB::row("SELECT * FROM `{$p}page_blocks` WHERE id=?", [$id]);
 	$decoded = $block['settings'] ? json_decode($block['settings'], true) : [];
 	$block['settings'] = is_array($decoded) ? (object)$decoded : (object)[];
 	out(true, '', ['block' => $block]);
+	} catch (Exception $e) {
+		out(false, 'DB error: ' . $e->getMessage());
+	}
 }
 
 // ── Delete block ──────────────────────────────────────────────────────────────
 if ($action === 'delete_block') {
 	require_access(ACCESS_DELETE);
 	$id = (int)post('id');
+	$blk = DB::row("SELECT settings FROM `{$p}page_blocks` WHERE id=?", [$id]);
+	if ($blk) {
+		$bs = $blk['settings'] ? json_decode($blk['settings'], true) : [];
+		if (!empty($bs['is_core'])) out(false, 'Core blocks cannot be removed.');
+	}
+	DB::exec("DELETE FROM `{$p}block_library` WHERE block_id=?", [$id]);
 	DB::exec("DELETE FROM `{$p}page_blocks` WHERE id=?", [$id]);
 	out(true, '');
 }
@@ -162,6 +203,8 @@ if ($action === 'block_data') {
 		$data['categories'] = DB::rows("SELECT id,name FROM `{$p}categories` WHERE status>0 ORDER BY name ASC");
 	} elseif ($type === 'contact_form') {
 		$data['forms'] = DB::rows("SELECT id,name FROM `{$p}contact_forms` ORDER BY name ASC");
+	} elseif ($type === 'menu') {
+		$data['menus'] = DB::rows("SELECT id,name FROM `{$p}menus` ORDER BY name ASC");
 	}
 
 	out(true, '', ['data' => $data]);

@@ -56,6 +56,7 @@
 			<button class="drawer-tab"        data-panel="images"  role="tab" aria-selected="false" aria-controls="panel-images">Images</button>
 			<button class="drawer-tab"        data-panel="seo"     role="tab" aria-selected="false" aria-controls="panel-seo">SEO</button>
 			<button class="drawer-tab"        data-panel="options" role="tab" aria-selected="false" aria-controls="panel-options">Options</button>
+			<button class="drawer-tab"        data-panel="related" role="tab" aria-selected="false" aria-controls="panel-related">Related</button>
 		</div>
 
 		{* ── Details tab ── *}
@@ -201,6 +202,24 @@
 
 		</div>
 
+		{* ── Related Products tab ── *}
+		<div class="drawer-tab-panel" id="panel-related" role="tabpanel">
+
+			<div class="df-section">Related Products</div>
+
+			<div class="df" style="position:relative">
+				<label for="rel-search-input">Add Related Product</label>
+				<input type="text" id="rel-search-input" placeholder="Search products…"
+				       autocomplete="off" aria-label="Search for related product"
+				       aria-autocomplete="list" aria-controls="rel-search-results">
+				<ul id="rel-search-results" class="opt-autocomplete-list" role="listbox"
+				    aria-label="Product suggestions" style="display:none"></ul>
+			</div>
+
+			<div id="related-products-list" role="list" aria-label="Related products"></div>
+
+		</div>
+
 		<!-- Scroll indicator -->
 		<div class="drawer-scroll-indicator hidden" id="prod-scroll-indicator" aria-hidden="true">
 			<span class="drawer-scroll-chevron">&#8964;</span>
@@ -224,10 +243,6 @@ var NC = {
 	deepaiKey: '{$deepai_key|escape:"javascript"}'
 };
 </script>
-<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
-<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
-<script src="{$url_root}js/vendor/ios-toggle.js"></script>
-<script src="{$url_root}js/vendor/delete-in-place.js"></script>
 <link rel="stylesheet" href="{$url_admin_real}css/filemanager.css">
 <script src="{$url_admin_real}js/filemanager.js"></script>
 <script src="{$url_admin_real}js/products.js"></script>

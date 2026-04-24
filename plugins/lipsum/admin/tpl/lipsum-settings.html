@@ -1,0 +1,45 @@
+{extends file="layout.html"}
+
+{block name="content"}
+<div style="max-width:700px">
+	<p style="margin-bottom:1.2rem;color:var(--nc-text-dim)">
+		This text is inserted into the rich text editor when a user clicks the <strong>Lorem</strong> button.
+	</p>
+	<div class="df" style="flex-direction:column;align-items:flex-start;gap:.4rem;margin-bottom:1rem">
+		<label for="lipsum-textarea" style="font-weight:600">Lorem Ipsum Text</label>
+		<textarea id="lipsum-textarea" rows="8"
+			style="width:100%;padding:.45rem .6rem;border:1px solid var(--nc-border);border-radius:var(--nc-radius);font-size:.9rem;resize:vertical;font-family:inherit"
+		>{$lipsum_text|escape}</textarea>
+	</div>
+	<button class="btn btn-primary" id="lipsum-save-btn">Save</button>
+</div>
+{/block}
+
+{block name="scripts"}
+<script>
+var NC = { adminUrl:'{$url_admin}', rootUrl:'{$url_root}' };
+</script>
+<script>
+(function () {
+	'use strict';
+	var AJAX = NC.adminUrl + '?route=lipsum/ajax';
+	document.getElementById('lipsum-save-btn').addEventListener('click', async function () {
+		var text = document.getElementById('lipsum-textarea').value;
+		var fd = new FormData();
+		fd.append('action', 'save');
+		fd.append('text', text);
+		try {
+			var r   = await fetch(AJAX, { method:'POST', body:fd });
+			var res = await r.json();
+			if (res.ok) {
+				SimpleNotification.success({ text:'Saved.' });
+			} else {
+				SimpleNotification.error({ text: res.message || 'Error saving.' });
+			}
+		} catch (e) {
+			SimpleNotification.error({ text:'Request failed.' });
+		}
+	});
+}());
+</script>
+{/block}

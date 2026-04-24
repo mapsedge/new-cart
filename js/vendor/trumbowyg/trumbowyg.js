@@ -508,7 +508,7 @@ Object.defineProperty(jQuery.trumbowyg, 'defaultOptions', {
         },
 
         addBtnDef: function (btnName, btnDef) {
-            if (substring(btnName, 0, 1) != '-') {
+            if (btnName.substr(0, 1) != '-') {
                 this.btnsDef[btnName] = $.extend(btnDef, this.btnsDef[btnName] || {});
             }
         },

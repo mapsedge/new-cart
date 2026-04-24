@@ -22,6 +22,7 @@
 	<button class="settings-tab" data-tab="server">Server</button>
 	<button class="settings-tab" data-tab="options">Options</button>
 	<button class="settings-tab" data-tab="seo">SEO</button>
+	<button class="settings-tab" data-tab="integrations">Integrations</button>
 	<button class="settings-tab" data-tab="users">Users</button>
 	<button class="settings-tab" data-tab="errors">Error Log</button>
 </div>
@@ -54,16 +55,36 @@
 						       placeholder="e.g. (800) 555-1234">
 					</div>
 					<div class="df">
-						<label for="s_store_logo_url">Logo URL</label>
+					</div>
+				</div>
+				<div class="df-row">
+					<div class="df">
+
+						<label>Store Logo</label>
+						<img id="preview-logo" class="img-preview" alt="Logo"><br>
 						<div style="display:flex;gap:.4rem;align-items:center">
 							<input type="text" id="s_store_logo_url" maxlength="500"
-							       placeholder="/img/logo.png or https://…"
-							       aria-describedby="logo-hint" style="flex:1">
+								placeholder="/img/logo.png or https://…"
+								aria-describedby="logo-hint" style="flex:1">
 							<button type="button" class="btn btn-secondary btn-sm"
-							        id="btn-logo-pick" aria-label="Pick logo from file manager"
-							        title="Pick from file manager">🖼</button>
+								id="btn-logo-pick" aria-label="Pick logo from file manager"
+								title="Pick from file manager">🖼</button>
 						</div>
-						<span class="hint" id="logo-hint">Leave blank to show store name as text.</span>
+						<div class="hint">JPG, PNG, WebP, or SVG.<br>Leave blank to show store name as text.<br>&nbsp;</div>
+						
+					</div>
+				</div>
+				<div class="df-row">
+					<div class="df">
+						<label>Favicon</label>
+						<div class="img-upload-row">
+							<img id="preview-favicon" class="img-preview" alt="Favicon"><br>
+							<div>
+								<button type="button" class="img-upload-btn" id="btn-upload-favicon">Choose Image…</button>
+								<input type="file" id="input-favicon" accept="image/jpeg,image/png,image/webp" style="display:none">
+								<div class="hint">JPG, PNG or WebP. Displayed at 32×32.</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -85,34 +106,6 @@
 					<label for="s_seo_keywords_default">Default Keywords</label>
 					<input type="text" id="s_seo_keywords_default" maxlength="500">
 					<div class="hint">Comma separated</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="settings-card">
-			<div class="card-head">Branding</div>
-			<div class="card-body">
-				<div class="df">
-					<label>Store Logo</label>
-					<div class="img-upload-row">
-						<img id="preview-logo" class="img-preview" alt="Logo">
-						<div>
-							<button type="button" class="img-upload-btn" id="btn-upload-logo">Choose Image…</button>
-							<input type="file" id="input-logo" accept="image/jpeg,image/png,image/webp" style="display:none">
-							<div class="hint">JPG, PNG or WebP.</div>
-						</div>
-					</div>
-				</div>
-				<div class="df">
-					<label>Favicon</label>
-					<div class="img-upload-row">
-						<img id="preview-favicon" class="img-preview" alt="Favicon">
-						<div>
-							<button type="button" class="img-upload-btn" id="btn-upload-favicon">Choose Image…</button>
-							<input type="file" id="input-favicon" accept="image/jpeg,image/png,image/webp" style="display:none">
-							<div class="hint">JPG, PNG or WebP. Displayed at 32×32.</div>
-						</div>
-					</div>
 				</div>
 			</div>
 		</div>
@@ -272,6 +265,10 @@
 					<ios-toggle id="s_log_errors" name="s_log_errors" size="sm" checked></ios-toggle>
 					<label for="s_log_errors">Log Errors</label>
 				</div>
+				<div class="df-toggle">
+					<ios-toggle id="s_smarty_debug" name="s_smarty_debug" size="sm"></ios-toggle>
+					<label for="s_smarty_debug">Smarty Debug Console</label>
+				</div>
 			</div>
 		</div>
 
@@ -284,8 +281,6 @@
 	<div class="sub-tabs" role="tablist" aria-label="Options sections">
 		<button class="sub-tab active" data-sub="images" role="tab" aria-selected="true"  aria-controls="sub-images">Images</button>
 		<button class="sub-tab"        data-sub="ai"     role="tab" aria-selected="false" aria-controls="sub-ai">AI</button>
-		<button class="sub-tab"        data-sub="integrations" role="tab" aria-selected="false" aria-controls="sub-integrations">Integrations</button>
-		<button class="sub-tab"        data-sub="wishlist" role="tab" aria-selected="false" aria-controls="sub-wishlist">Wish Lists</button>
 		<button class="sub-tab"        data-sub="placeholder" role="tab" aria-selected="false" aria-controls="sub-placeholder">Placeholder</button>
 	</div>
 
@@ -327,8 +322,28 @@
 					<label class="img-row-label">Product Image</label>
 					<input type="number" id="s_img_product_width" min="200" max="2000" value="600" aria-label="Product image width">
 					<input type="number" id="s_img_product_quality" min="1" max="100" value="80" aria-label="Product image quality">
+
+					<label class="img-row-label">Cart Thumbnail</label>
+					<input type="number" id="s_img_cart_size" min="40" max="400" value="100" aria-label="Cart thumbnail size">
+					<span></span>
+
+					<label class="img-row-label">Related Products</label>
+					<input type="number" id="s_img_related_size" min="80" max="600" value="200" aria-label="Related products thumbnail size">
+					<span></span>
 				</div>
-				<p class="section-hint" style="margin-top:.75rem">Product Admin: shown in admin product list, proportionally scaled. File Manager: cropped square for icon view. Product Image: displayed on the catalog product page.</p>
+				<p class="section-hint" style="margin-top:.75rem">Product Admin: shown in admin product list, proportionally scaled. File Manager: cropped square for icon view. Product Image: displayed on the catalog product page. Cart Thumbnail: product image in the cart. Related Products: thumbnail size used in the related products section.</p>
+			</div>
+		</div>
+
+		<div class="settings-card">
+			<div class="card-head">Related Products</div>
+			<div class="card-body">
+				<div class="df">
+					<label for="s_related_max_items">Max items shown</label>
+					<input type="number" id="s_related_max_items" min="0" max="100" value="0"
+					       aria-label="Max related products to show">
+					<div class="hint">Maximum number of related products shown on the product page. Set to 0 to show all.</div>
+				</div>
 			</div>
 		</div>
 
@@ -355,77 +370,38 @@
 		</div>
 	</div>
 
-	{* ── Integrations sub-tab ── *}
-	<div class="sub-panel" id="sub-integrations" role="tabpanel">
+	{* ── Placeholder sub-tab ── *}
+	<div class="sub-panel" id="sub-placeholder" role="tabpanel">
 		<div class="card-grid">
-
-			{* Stripe — shown only when stripe plugin is active *}
-			{if in_array('stripe', $active_plugins)}
 			<div class="settings-card">
-				<div class="card-head">Stripe Payments</div>
+				<div class="card-head">Placeholder</div>
 				<div class="card-body">
-
-					<div class="df-toggle" style="margin-bottom:1.25rem">
-						<label for="s_stripe_mode" style="font-weight:600;min-width:0">Mode</label>
-						<select id="s_stripe_mode" aria-label="Stripe mode" style="width:auto">
-							<option value="test">Test</option>
-							<option value="live">Live</option>
-						</select>
-						<span class="hint" style="margin:0">Switch between test and live credentials.</span>
-					</div>
-
-					<p class="section-hint" style="margin-bottom:.6rem;font-weight:700">Test Credentials</p>
-					<div class="df">
-						<label for="s_stripe_test_publishable_key">Test Publishable Key</label>
-						<input type="text" id="s_stripe_test_publishable_key" maxlength="255"
-						       autocomplete="off" placeholder="pk_test_..."
-						       aria-label="Stripe test publishable key">
-					</div>
-					<div class="df">
-						<label for="s_stripe_test_secret_key">Test Secret Key</label>
-						<input type="text" id="s_stripe_test_secret_key" maxlength="255"
-						       autocomplete="off" placeholder="sk_test_..."
-						       aria-label="Stripe test secret key">
-					</div>
-					<div class="df">
-						<label for="s_stripe_test_webhook_secret">Test Webhook Secret</label>
-						<input type="text" id="s_stripe_test_webhook_secret" maxlength="255"
-						       autocomplete="off" placeholder="whsec_..."
-						       aria-label="Stripe test webhook secret">
-					</div>
-
-					<p class="section-hint" style="margin:.85rem 0 .6rem;font-weight:700">Live Credentials</p>
-					<div class="df">
-						<label for="s_stripe_publishable_key">Live Publishable Key</label>
-						<input type="text" id="s_stripe_publishable_key" maxlength="255"
-						       autocomplete="off" placeholder="pk_live_..."
-						       aria-label="Stripe live publishable key">
-					</div>
-					<div class="df">
-						<label for="s_stripe_secret_key">Live Secret Key</label>
-						<input type="text" id="s_stripe_secret_key" maxlength="255"
-						       autocomplete="off" placeholder="sk_live_..."
-						       aria-label="Stripe live secret key">
-					</div>
-					<div class="df">
-						<label for="s_stripe_webhook_secret">Live Webhook Secret</label>
-						<input type="text" id="s_stripe_webhook_secret" maxlength="255"
-						       autocomplete="off" placeholder="whsec_..."
-						       aria-label="Stripe live webhook secret">
-						<div class="hint">Point webhook to: <code>{$url_root}?route=stripe/webhook</code></div>
-					</div>
-
+					<p class="section-hint">This section is reserved for future options.</p>
 				</div>
 			</div>
-			{/if}
+		</div>
+	</div>
 
-			{* GoShippo — shown only when goshippo plugin is active *}
-			{if in_array('goshippo', $active_plugins)}
+</div>
+
+	{* ── Integrations tab ── *}
+	<div class="tab-panel" id="tab-integrations">
+
+		<div class="sub-tabs" role="tablist" aria-label="Integrations">
+			<button class="sub-tab active" data-sub="int-shippo" role="tab" aria-selected="true"  aria-controls="sub-int-shippo">Shippo</button>
+			{if in_array('stripe', $active_plugins)}
+			<button class="sub-tab"        data-sub="int-stripe" role="tab" aria-selected="false" aria-controls="sub-int-stripe">Stripe</button>
+			{/if}
+		</div>
+
+		{* ── Shippo sub-tab ── *}
+		<div class="sub-panel active" id="sub-int-shippo" role="tabpanel">
+			<div class="card-grid">
 			<div class="settings-card">
-				<div class="card-head">GoShippo Shipping</div>
+				<div class="card-head">Shippo API</div>
 				<div class="card-body">
 					<div class="df">
-						<label for="s_shippo_api_key">Shippo API Key</label>
+						<label for="s_shippo_api_key">API Key</label>
 						<input type="text" id="s_shippo_api_key" maxlength="255"
 						       autocomplete="off" placeholder="shippo_live_..."
 						       aria-label="Shippo API key">
@@ -498,49 +474,64 @@
 					</div>
 				</div>
 			</div>
-			{/if}
-
-			{if !in_array('stripe', $active_plugins) && !in_array('goshippo', $active_plugins)}
-			<div class="settings-card">
-				<div class="card-body">
-					<p class="section-hint">No integration plugins are currently active. Enable Stripe or GoShippo from the <a href="{$url_admin}?route=plugins">Plugins</a> page.</p>
-				</div>
 			</div>
-			{/if}
-
 		</div>
-	</div>
 
-	{* ── Wish List sub-tab ── *}
-	<div class="sub-panel" id="sub-wishlist" role="tabpanel">
-		<div class="card-grid">
+		{* ── Stripe sub-tab ── *}
+		{if in_array('stripe', $active_plugins)}
+		<div class="sub-panel" id="sub-int-stripe" role="tabpanel">
+			<div class="card-grid">
 			<div class="settings-card">
-				<div class="card-head">Guest Wish Lists</div>
+				<div class="card-head">Stripe Payments</div>
 				<div class="card-body">
+					<div class="df-toggle" style="margin-bottom:1.25rem">
+						<label for="s_stripe_mode" style="font-weight:600;min-width:0">Mode</label>
+						<select id="s_stripe_mode" aria-label="Stripe mode" style="width:auto">
+							<option value="test">Test</option>
+							<option value="live">Live</option>
+						</select>
+						<span class="hint" style="margin:0">Switch between test and live credentials.</span>
+					</div>
+					<p class="section-hint" style="margin-bottom:.6rem;font-weight:700">Test Credentials</p>
 					<div class="df">
-						<label for="s_wishlist_guest_days">Guest list expiry (days)</label>
-						<input type="number" id="s_wishlist_guest_days" min="1" max="365"
-						       value="14" aria-label="Guest wish list expiry in days">
-						<div class="hint">Wish lists created by guests expire after this many days. Set to 0 to never expire.</div>
+						<label for="s_stripe_test_publishable_key">Test Publishable Key</label>
+						<input type="text" id="s_stripe_test_publishable_key" maxlength="255"
+						       autocomplete="off" placeholder="pk_test_..." aria-label="Stripe test publishable key">
+					</div>
+					<div class="df">
+						<label for="s_stripe_test_secret_key">Test Secret Key</label>
+						<input type="text" id="s_stripe_test_secret_key" maxlength="255"
+						       autocomplete="off" placeholder="sk_test_..." aria-label="Stripe test secret key">
+					</div>
+					<div class="df">
+						<label for="s_stripe_test_webhook_secret">Test Webhook Secret</label>
+						<input type="text" id="s_stripe_test_webhook_secret" maxlength="255"
+						       autocomplete="off" placeholder="whsec_..." aria-label="Stripe test webhook secret">
+					</div>
+					<p class="section-hint" style="margin:.85rem 0 .6rem;font-weight:700">Live Credentials</p>
+					<div class="df">
+						<label for="s_stripe_publishable_key">Live Publishable Key</label>
+						<input type="text" id="s_stripe_publishable_key" maxlength="255"
+						       autocomplete="off" placeholder="pk_live_..." aria-label="Stripe live publishable key">
+					</div>
+					<div class="df">
+						<label for="s_stripe_secret_key">Live Secret Key</label>
+						<input type="text" id="s_stripe_secret_key" maxlength="255"
+						       autocomplete="off" placeholder="sk_live_..." aria-label="Stripe live secret key">
+					</div>
+					<div class="df">
+						<label for="s_stripe_webhook_secret">Live Webhook Secret</label>
+						<input type="text" id="s_stripe_webhook_secret" maxlength="255"
+						       autocomplete="off" placeholder="whsec_..." aria-label="Stripe live webhook secret">
+						<div class="hint">Point webhook to: <code>{$url_root}?route=stripe/webhook</code></div>
 					</div>
 				</div>
 			</div>
-		</div>
-	</div>
-
-	{* ── Placeholder sub-tab ── *}
-	<div class="sub-panel" id="sub-placeholder" role="tabpanel">
-		<div class="card-grid">
-			<div class="settings-card">
-				<div class="card-head">Placeholder</div>
-				<div class="card-body">
-					<p class="section-hint">This section is reserved for future options.</p>
-				</div>
 			</div>
 		</div>
-	</div>
+		{/if}
 
-</div>
+	</div>
 
 {* ── Users tab ── *}
 <div class="tab-panel" id="tab-seo">
@@ -673,10 +664,6 @@ var NC = {
 	adminReal: '{$url_admin_real}'
 };
 </script>
-<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
-<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
-<script src="{$url_root}js/vendor/ios-toggle.js"></script>
-<script src="{$url_root}js/vendor/delete-in-place.js"></script>
 <link rel="stylesheet" href="{$url_admin_real}css/filemanager.css">
 <script src="{$url_admin_real}js/filemanager.js?v=149"></script>
 <script src="{$url_admin_real}js/settings.js"></script>

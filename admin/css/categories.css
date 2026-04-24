@@ -334,3 +334,18 @@ roller-select .rs-track {
 	0%, 100% { transform: translateY(0); }
 	50%       { transform: translateY(5px); }
 }
+
+.nc-stub {
+	padding: 2rem;
+	color: var(--nc-text-dim);
+}
+.nc-stub h1 { font-size: 1.4rem; margin-bottom: .5rem; }
+
+/* Table link style */
+.nc-table-link {
+	color: var(--nc-primary);
+	text-decoration: none;
+	font-weight: 600;
+	font-size: .88rem;
+}
+.nc-table-link:hover { text-decoration: underline; }

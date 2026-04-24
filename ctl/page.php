@@ -2,11 +2,17 @@
 $p    = DB_PREFIX;
 $slug = get('slug', '');
 
-// Home page is a special case
-if (!$slug || $slug === 'home') {
-	$page = DB::row("SELECT * FROM `{$p}pages` WHERE slug='home' AND status=1");
+// Determine the designated homepage ID (set via page properties in the editor)
+$home_page_id = (int)(DB::val("SELECT `value` FROM `{$p}settings` WHERE `key`='home_page_id'") ?? 0);
+
+// Load page — homepage bypasses status check, all others require status > 0
+if ($slug) {
+	$page = DB::row("SELECT * FROM `{$p}pages` WHERE slug=?", [$slug]);
+	if ($page && (int)$page['id'] !== $home_page_id && (int)$page['status'] <= 0) {
+		$page = null; // not published and not the homepage
+	}
 } else {
-	$page = DB::row("SELECT * FROM `{$p}pages` WHERE slug=? AND status > 0", [$slug]);
+	$page = null;
 }
 
 if (!$page) {
@@ -99,6 +105,20 @@ foreach ($blocks as &$b) {
 			$b['heading'] = $s['heading'] ?? 'New Arrivals';
 			break;
 
+		case 'menu':
+			if (!empty($s['menu_id'])) {
+				$items = load_menu((int)$s['menu_id'], $p);
+				if (!empty($s['max_items']) && (int)$s['max_items'] > 0) {
+					$items = array_slice($items, 0, (int)$s['max_items']);
+				}
+				$b['menu_items'] = $items;
+			}
+			break;
+		case 'related_products':
+			$b['heading']  = $s['heading'] ?? 'Related Products';
+			$b['products'] = []; // requires product-page context; empty on generic pages
+			break;
+
 		case 'sitemap':
 			// Use generated HTML if present, otherwise empty placeholder
 			$b['generated_html'] = $s['generated_html'] ?? null;
@@ -119,7 +139,12 @@ foreach ($blocks as &$b) {
 }
 unset($b);
 
+normalize_block_grid($blocks);
+
+$rel_thumb_size = max(80, (int)(DB::val("SELECT `value` FROM `{$p}settings` WHERE `key`='img_related_size'") ?: 200));
+
 catalog_sidebar($smarty);
+$smarty->assign('rel_thumb_size',    $rel_thumb_size);
 $smarty->assign('page',              $page);
 $smarty->assign('blocks',            $blocks);
 $smarty->assign('page_type',         'page');

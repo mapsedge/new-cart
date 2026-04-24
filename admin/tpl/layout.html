@@ -5,6 +5,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>{block name="title"}{$page_title|default:'Admin'} — {$site_name|escape}{/block}</title>
 	<link rel="stylesheet" href="{$url_admin_real}css/vars.css">
+	<link rel="stylesheet" href="{$url_admin_real}css/categories.css">
+	<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
+	<link rel="stylesheet" href="{$url_root}js/vendor/trumbowyg/trumbowyg.css">
 	<style>
 		*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -195,6 +198,62 @@
 
 		#sidebar.collapsed nav .nav-section { opacity: 0; }
 
+		/* ── Accordion groups ── */
+		.nav-group { overflow: hidden; }
+		.nav-group-head {
+			display: flex;
+			align-items: center;
+			gap: .75rem;
+			width: 100%;
+			padding: .65rem 1rem;
+			background: none;
+			border: none;
+			border-left: 3px solid transparent;
+			color: var(--nc-sidebar-text);
+			font-size: .88rem;
+			font-weight: 500;
+			cursor: pointer;
+			white-space: nowrap;
+			overflow: hidden;
+			text-align: left;
+			transition: background .15s, color .15s;
+		}
+		.nav-group-head:hover { background: var(--nc-sidebar-hover); color: #fff; }
+		.nav-group-head .nav-icon {
+			flex-shrink: 0; width: 18px; text-align: center;
+			font-size: 1rem; opacity: .8;
+		}
+		.nav-group-head .nav-label { flex: 1; transition: opacity .2s; }
+		.nav-group-arrow {
+			flex-shrink: 0; font-size: .85rem;
+			transition: transform .2s ease;
+			color: var(--nc-sidebar-dim);
+		}
+		.nav-group.open .nav-group-arrow { transform: rotate(90deg); }
+		#sidebar.collapsed .nav-group-head .nav-label,
+		#sidebar.collapsed .nav-group-arrow { opacity: 0; }
+
+		.nav-group-items {
+			max-height: 0;
+			overflow: hidden;
+			transition: max-height .4s ease;
+			background: rgba(0,0,0,.12);
+		}
+		.nav-group.open .nav-group-items { max-height: 400px; }
+
+		.nav-child {
+			padding-left: 2.5rem !important;
+			font-size: .84rem !important;
+			font-weight: 400 !important;
+			border-left-color: transparent !important;
+		}
+		.nav-child.active {
+			border-left-color: var(--nc-sidebar-active) !important;
+			background: var(--nc-sidebar-hover) !important;
+			color: #fff !important;
+		}
+		#sidebar.collapsed .nav-child { padding-left: 1rem !important; }
+
 		/* ── Sidebar footer ── */
 		#sidebar-foot {
 			padding: .85rem 1rem;
@@ -300,11 +359,29 @@
 			z-index: 300;
 		}
 		#sidebar.collapsed nav a:hover::after { opacity: 1; }
+
+		/* ── Fetch navigation loading indicator ── */
+		#main.nc-loading #content { opacity: .5; pointer-events: none; transition: opacity .15s; }
+		#main::before {
+			content: '';
+			display: none;
+			position: fixed; top: 0; left: 0; right: 0;
+			height: 3px;
+			background: var(--nc-primary);
+			z-index: 9999;
+			animation: nc-progress 1s ease infinite;
+		}
+		#main.nc-loading::before { display: block; }
+		@keyframes nc-progress {
+			0%   { transform: translateX(-100%); }
+			100% { transform: translateX(100%); }
+		}
 	</style>
 	{block name="head"}{/block}
 </head>
 <body>
 
+{if !$nc_partial}
 {* ── Top bar ── *}
 <div id="topbar">
 	<button id="sidebar-toggle" title="Toggle menu" aria-label="Toggle menu">
@@ -338,88 +415,88 @@
 	<nav>
 		{assign var="p" value=$page|default:'dashboard'}
 
-		<a href="{$url_admin}?route=dashboard" data-label="Dashboard" class="{if $p=='dashboard'}active{/if}">
+		{* ── Dashboard ── *}
+		<a href="{$url_admin}?route=dashboard" class="nav-link{if $p=='dashboard'} active{/if}">
 			<span class="nav-icon">&#9783;</span><span class="nav-label">Dashboard</span>
 		</a>
 
+		{* ── Catalog ── *}
 		{if ($access & 8)}
-		<a href="{$url_admin}?route=orders" data-label="Orders" class="{if $p=='orders'}active{/if}">
-			<span class="nav-icon">&#128722;</span><span class="nav-label">Orders</span>
-		</a>
-		<a href="{$url_admin}?route=customers" data-label="Customers" class="{if $p=='customers'}active{/if}">
-			<span class="nav-icon">&#128101;</span><span class="nav-label">Customers</span>
-		</a>
-		<a href="{$url_admin}?route=categories" data-label="Categories" class="{if $p=='categories'}active{/if}">
-			<span class="nav-icon">&#128193;</span><span class="nav-label">Categories</span>
-		</a>
-		<a href="{$url_admin}?route=products" data-label="Products" class="{if $p=='products'}active{/if}">
-			<span class="nav-icon">&#128085;</span><span class="nav-label">Products</span>
-		</a>
-		<a href="{$url_admin}?route=options" data-label="Options" class="{if $p=='options'}active{/if}">
-			<span class="nav-icon">&#9881;</span><span class="nav-label">Options</span>
-		</a>
-		<a href="{$url_admin}?route=filemanager" data-label="File Manager" class="{if $p=='filemanager'}active{/if}">
-			<span class="nav-icon">&#128247;</span><span class="nav-label">File Manager</span>
-		</a>
-		<a href="{$url_admin}?route=discounts" data-label="Discounts" class="{if $p=='discounts'}active{/if}">
-			<span class="nav-icon">&#127991;</span><span class="nav-label">Discounts</span>
-		</a>
-		<a href="{$url_admin}?route=locations" data-label="Locations & Tax" class="{if $p=='locations'}active{/if}">
-			<span class="nav-icon">&#127758;</span><span class="nav-label">Locations &amp; Tax</span>
-		</a>
+		<div class="nav-group{if $p=='categories'||$p=='products'||$p=='options'||$p=='reviews'} open{/if}">
+			<button class="nav-group-head" aria-expanded="{if $p=='categories'||$p=='products'||$p=='options'||$p=='reviews'}true{else}false{/if}">
+				<span class="nav-icon">&#128085;</span><span class="nav-label">Catalog</span>
+				<span class="nav-group-arrow">&#8250;</span>
+			</button>
+			<div class="nav-group-items">
+				<a href="{$url_admin}?route=categories" class="nav-link nav-child{if $p=='categories'} active{/if}">Categories</a>
+				<a href="{$url_admin}?route=products"   class="nav-link nav-child{if $p=='products'} active{/if}">Products</a>
+				<a href="{$url_admin}?route=options"    class="nav-link nav-child{if $p=='options'} active{/if}">Options</a>
+				{if ($access & 64)}
+				<a href="{$url_admin}?route=reviews"    class="nav-link nav-child{if $p=='reviews'} active{/if}">Reviews</a>
+				{/if}
+			</div>
+		</div>
 		{/if}
 
-		{if ($access & 32)}
-		<a href="{$url_admin}?route=reports" data-label="Reports" class="{if $p=='reports'}active{/if}">
-			<span class="nav-icon">&#128202;</span><span class="nav-label">Reports</span>
-		</a>
-		{/if}
-
-		{if ($access & 64)}
-		<a href="{$url_admin}?route=reviews" data-label="Reviews" class="{if $p=='reviews'}active{/if}">
-			<span class="nav-icon">&#11088;</span><span class="nav-label">Reviews</span>
-		</a>
-		{/if}
-
+		{* ── Customers ── *}
 		{if ($access & 8)}
-		<a href="{$url_admin}?route=shipping" data-label="Shipping" class="{if $p=='shipping'}active{/if}">
-			<span class="nav-icon">&#128666;</span><span class="nav-label">Shipping</span>
-		</a>
-		<a href="{$url_admin}?route=themes" data-label="Themes" class="{if $p=='themes'}active{/if}">
-			<span class="nav-icon">&#127912;</span><span class="nav-label">Themes</span>
-		</a>
+		<div class="nav-group{if $p=='customers'||$p=='messages'||$p=='discounts'} open{/if}">
+			<button class="nav-group-head" aria-expanded="{if $p=='customers'||$p=='messages'||$p=='discounts'}true{else}false{/if}">
+				<span class="nav-icon">&#128101;</span><span class="nav-label">Customers</span>
+				<span class="nav-group-arrow">&#8250;</span>
+			</button>
+			<div class="nav-group-items">
+				<a href="{$url_admin}?route=customers" class="nav-link nav-child{if $p=='customers'} active{/if}">Customers</a>
+				<a href="{$url_admin}?route=messages"  class="nav-link nav-child{if $p=='messages'} active{/if}">Messages</a>
+				<a href="{$url_admin}?route=discounts" class="nav-link nav-child{if $p=='discounts'} active{/if}">Discounts</a>
+			</div>
+		</div>
 		{/if}
 
+		{* ── Content ── *}
 		{if ($access & 128)}
-		<a href="{$url_admin}?route=pages" data-label="Pages" class="{if $p=='pages'}active{/if}">
-			<span class="nav-icon">&#128196;</span><span class="nav-label">Pages</span>
-		</a>
-		<a href="{$url_admin}?route=menus" data-label="Menus" class="{if $p=='menus'}active{/if}">
-			<span class="nav-icon">&#9776;</span><span class="nav-label">Menus</span>
-		</a>
-		<a href="{$url_admin}?route=slideshows" data-label="Slideshows" class="{if $p=='slideshows'}active{/if}">
-			<span class="nav-icon">&#127777;</span><span class="nav-label">Slideshows</span>
-		</a>
-		<a href="{$url_admin}?route=messages" data-label="Messages" class="{if $p=='messages'}active{/if}">
-			<span class="nav-icon">&#9993;</span><span class="nav-label">Messages</span>
-		</a>
+		<div class="nav-group{if $p=='filemanager'||$p=='themes'||$p=='pages'||$p=='page-edit'||$p=='menus'||$p=='slideshows'} open{/if}">
+			<button class="nav-group-head" aria-expanded="{if $p=='filemanager'||$p=='themes'||$p=='pages'||$p=='page-edit'||$p=='menus'||$p=='slideshows'}true{else}false{/if}">
+				<span class="nav-icon">&#128196;</span><span class="nav-label">Content</span>
+				<span class="nav-group-arrow">&#8250;</span>
+			</button>
+			<div class="nav-group-items">
+				<a href="{$url_admin}?route=filemanager" class="nav-link nav-child{if $p=='filemanager'} active{/if}">File Manager</a>
+				<a href="{$url_admin}?route=themes"      class="nav-link nav-child{if $p=='themes'} active{/if}">Themes</a>
+				<a href="{$url_admin}?route=pages"       class="nav-link nav-child{if $p=='pages'||$p=='page-edit'} active{/if}">Pages</a>
+				<a href="{$url_admin}?route=menus"       class="nav-link nav-child{if $p=='menus'} active{/if}">Menus</a>
+				<a href="{$url_admin}?route=slideshows"  class="nav-link nav-child{if $p=='slideshows'} active{/if}">Slideshows</a>
+			</div>
+		</div>
 		{/if}
 
+		{* ── Setup & Utilities ── *}
 		{if $access == 254}
-		<a href="{$url_admin}?route=plugins" data-label="Plugins" class="{if $p=='plugins'}active{/if}">
-			<span class="nav-icon">&#129695;</span><span class="nav-label">Plugins</span>
-		</a>
-		<a href="{$url_admin}?route=setup" data-label="Setup & Utilities" class="{if $p=='setup'}active{/if}">
-			<span class="nav-icon">&#128295;</span><span class="nav-label">Setup &amp; Utilities</span>
-		</a>
+		<div class="nav-group{if $p=='setup'||$p=='plugins'||$p=='locations'||$p=='reports'||$p=='shipping'} open{/if}">
+			<button class="nav-group-head" aria-expanded="{if $p=='setup'||$p=='plugins'||$p=='locations'||$p=='reports'||$p=='shipping'}true{else}false{/if}">
+				<span class="nav-icon">&#128295;</span><span class="nav-label">Setup &amp; Utilities</span>
+				<span class="nav-group-arrow">&#8250;</span>
+			</button>
+			<div class="nav-group-items">
+				<a href="{$url_admin}?route=setup"      class="nav-link nav-child{if $p=='setup'} active{/if}">Setup &amp; Utilities</a>
+				<a href="{$url_admin}?route=plugins"    class="nav-link nav-child{if $p=='plugins'} active{/if}">Plugins</a>
+				<a href="{$url_admin}?route=locations"  class="nav-link nav-child{if $p=='locations'} active{/if}">Locations &amp; Tax</a>
+				{if ($access & 32)}
+				<a href="{$url_admin}?route=reports"    class="nav-link nav-child{if $p=='reports'} active{/if}">Reports</a>
+				{/if}
+				<a href="{$url_admin}?route=shipping"   class="nav-link nav-child{if $p=='shipping'} active{/if}">Shipping</a>
+			</div>
+		</div>
 		{/if}
 
-	</nav>
+		</nav>
 	<div id="sidebar-foot">
-		new-cart v1.5.4<br>
+		new-cart v1.8.43<br>
 		&copy; {$smarty.now|date_format:'%Y'} Map's Edge Creative
 	</div>
 </div>
+
+{/if}{* end nc_partial chrome *}
 
 {* ── Main ── *}
 <div id="main" class="page-{$p}">{if $p=='filemanager'}
@@ -458,9 +535,11 @@
 		{/block}
 	</div>
 
+	{if !$nc_partial}
 	<div id="admin-footer">
 		new-cart &mdash; &copy; {$smarty.now|date_format:'%Y'} <a href="https://mapsedgecreative.com" target="_blank" rel="noopener" style="color:inherit">Map's Edge Creative</a>
 	</div>
+	{/if}
 
 </div>{* /main *}
 
@@ -489,23 +568,189 @@
 	toggle.addEventListener('click', function () {
 		setCollapsed(!sidebar.classList.contains('collapsed'));
 	});
+
+	// ── Accordion — persist open group to localStorage ──────────────────────
+	const ACCORDION_KEY = 'nc_nav_group';
+
+	function openGroup(group, save) {
+		document.querySelectorAll('.nav-group').forEach(function(g) {
+			g.classList.remove('open');
+			g.querySelector('.nav-group-head')?.setAttribute('aria-expanded', 'false');
+		});
+		if (group) {
+			group.classList.add('open');
+			group.querySelector('.nav-group-head')?.setAttribute('aria-expanded', 'true');
+			if (save) localStorage.setItem(ACCORDION_KEY, group.dataset.group || '');
+		}
+	}
+
+	// Assign data-group to each group for identification
+	document.querySelectorAll('.nav-group').forEach(function(g, i) {
+		g.dataset.group = i;
+	});
+
+	// Restore MRU group — but only if no group is already open (from server-side class)
+	const alreadyOpen = document.querySelector('.nav-group.open');
+	if (!alreadyOpen) {
+		const saved = localStorage.getItem(ACCORDION_KEY);
+		if (saved !== null) {
+			const target = document.querySelector('.nav-group[data-group="' + saved + '"]');
+			if (target) openGroup(target, false);
+		}
+	}
+
+	document.querySelectorAll('.nav-group-head').forEach(function(btn) {
+		btn.addEventListener('click', function() {
+			const group = btn.closest('.nav-group');
+			const isOpen = group.classList.contains('open');
+			openGroup(isOpen ? null : group, true);
+		});
+	});
+
+	// ── Fetch-based routing ───────────────────────────────────────────────────
+	const mainEl    = document.getElementById('main');
+	const contentEl = document.getElementById('content');
+
+	function isAdminNav(a) {
+		if (!a || a.target === '_blank') return false;
+		const href = a.getAttribute('href') || '';
+		if (!href || href.startsWith('#') || href.startsWith('http')) return false;
+		// Don't intercept: logout, login, page-edit (full-page), filemanager, ajax routes
+		if (href.includes('route=logout') || href.includes('route=login')) return false;
+		if (href.includes('/ajax')) return false;
+		// If currently on page-edit, all nav must be full navigations (page-edit has non-standard DOM)
+		if (document.getElementById('pe-canvas')) return false;
+		// Only intercept links with a route= param (admin nav)
+		return href.includes('route=');
+	}
+
+	function setLoading(on) {
+		mainEl.classList.toggle('nc-loading', on);
+	}
+
+	async function navigateTo(url, push) {
+		setLoading(true);
+		try {
+			const res = await fetch(url, {
+				headers: { 'X-NC-Partial': '1' },
+				credentials: 'same-origin',
+			});
+			if (!res.ok) throw new Error('HTTP ' + res.status);
+			const html = await res.text();
+			// Parse and extract #content-header + #content
+			const parser = new DOMParser();
+			const doc = parser.parseFromString(html, 'text/html');
+			const newHeader  = doc.getElementById('content-header');
+			const newContent = doc.getElementById('content');
+			const newMain    = doc.getElementById('main');
+			if (newContent) {
+				// Update main class (page-X)
+				if (newMain) mainEl.className = newMain.className;
+				// Replace content-header
+				const existingHeader = document.getElementById('content-header');
+				if (existingHeader && newHeader) existingHeader.replaceWith(newHeader);
+				// Replace content
+				document.getElementById('content')?.replaceWith(newContent);
+				// Inject any CSS links from partial head block that aren't already loaded
+				const loadedHrefs = new Set(
+					Array.from(document.querySelectorAll('link[rel=stylesheet]')).map(l => l.href)
+				);
+				doc.querySelectorAll('link[rel=stylesheet]').forEach(function(l) {
+					const abs = new URL(l.href, location.origin).href;
+					if (!loadedHrefs.has(abs)) {
+						const nl = document.createElement('link');
+						nl.rel = 'stylesheet'; nl.href = l.href;
+						document.head.appendChild(nl);
+					}
+				});
+				// Re-run page scripts from #page-scripts-wrap (skip already-loaded vendor scripts)
+				const loadedSrcs = new Set(
+					Array.from(document.querySelectorAll('script[src]')).map(s => s.src)
+				);
+				const scriptsWrap = doc.getElementById('page-scripts-wrap');
+				// Remove old page-scripts-wrap from DOM
+				document.getElementById('page-scripts-wrap')?.remove();
+				if (scriptsWrap) {
+					document.body.appendChild(scriptsWrap);
+					scriptsWrap.querySelectorAll('script').forEach(function(s) {
+						if (s.src && loadedSrcs.has(new URL(s.src, location.origin).href)) return;
+						const ns = document.createElement('script');
+						if (s.src) { ns.src = s.src; } else { ns.textContent = s.textContent; }
+						document.body.appendChild(ns);
+					});
+				}
+				// Update document title
+				const newTitle = doc.querySelector('title');
+				if (newTitle) document.title = newTitle.textContent;
+				// Update active nav link
+				const urlObj = new URL(url, location.origin);
+				const newRoute = urlObj.searchParams.get('route') || 'dashboard';
+				document.querySelectorAll('#sidebar .nav-link, #sidebar .nav-child').forEach(function(a) {
+					const aRoute = new URL(a.href, location.origin).searchParams.get('route') || '';
+					a.classList.toggle('active', aRoute === newRoute);
+				});
+				if (push) history.pushState({ url }, '', url);
+				// Open accordion group containing active link
+				const activeLink = document.querySelector('#sidebar .active');
+				if (activeLink) {
+					const group = activeLink.closest('.nav-group');
+					if (group) openGroup(group, true);
+				}
+				window.scrollTo(0, 0);
+			} else {
+				// Fallback: hard navigate
+				location.href = url;
+			}
+		} catch(err) {
+			console.error('Nav error:', err);
+			location.href = url;
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	// Intercept nav clicks
+	document.getElementById('sidebar')?.addEventListener('click', function(e) {
+		const a = e.target.closest('a');
+		if (!isAdminNav(a)) return;
+		e.preventDefault();
+		navigatesTo(a.href, true);
+	});
+
+	// Topbar links (Visit Store, logout excluded above)
+	document.getElementById('topbar')?.addEventListener('click', function(e) {
+		const a = e.target.closest('a');
+		if (!isAdminNav(a)) return;
+		e.preventDefault();
+		navigatesTo(a.href, true);
+	});
+
+	// Browser back/forward
+	window.addEventListener('popstate', function(e) {
+		const url = (e.state && e.state.url) || location.href;
+		navigatesTo(url, false);
+	});
+
+	function navigatesTo(url, push) { navigateTo(url, push); }
 })();
 </script>
-{* ── JS ── *}
+
+{* ── Vendor JS (loaded before page scripts so helpers are available) ── *}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="{$url_root}js/app.js"></script>
 <script src="{$url_root}js/vendor/debounce-button.js"></script>
 <script src="{$url_root}js/vendor/password-field.js"></script>
-<link rel="stylesheet" href="{$url_root}js/vendor/trumbowyg/trumbowyg.css">
+<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="{$url_root}js/vendor/ios-toggle.js"></script>
 <script src="{$url_root}js/vendor/trumbowyg/trumbowyg.js"></script>
 <script>
 /**
  * debounceBtn — attaches a debounced click handler to a button.
- * The button is never disabled. If clicked within `ms` of the previous
- * click, the handler is not invoked. Default 1000ms.
  */
 function debounceBtn(btn, handler, ms) {
 	ms = ms || 1000;
 	var last = 0;
+	if (!btn) return;
 	btn.addEventListener('click', function (e) {
 		var now = Date.now();
 		if (now - last < ms) return;
@@ -514,12 +759,6 @@ function debounceBtn(btn, handler, ms) {
 	});
 }
 </script>
-{block name="scripts"}{/block}
-<script>
-if (window.jQuery) {
-	jQuery.trumbowyg.svgPath = NC.rootUrl + 'js/vendor/trumbowyg/src/ui/icons.svg';
-}
-</script>
-
+<div id="page-scripts-wrap">{block name="scripts"}{/block}</div>
 </body>
 </html>

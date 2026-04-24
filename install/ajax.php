@@ -290,6 +290,14 @@ if ($action === 'install') {
 			PRIMARY KEY (`category_id`, `product_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
+		"CREATE TABLE IF NOT EXISTS `{$p}product_related` (
+			`product_id`         INT UNSIGNED NOT NULL,
+			`related_product_id` INT UNSIGNED NOT NULL,
+			`display_order`      INT UNSIGNED NOT NULL DEFAULT 0,
+			PRIMARY KEY (`product_id`, `related_product_id`),
+			KEY `related_product_id` (`related_product_id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
 		"CREATE TABLE IF NOT EXISTS `{$p}customers` (
 			`id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
 			`email`      VARCHAR(128) NOT NULL,
@@ -428,8 +436,23 @@ if ($action === 'install') {
 			`display_order` INT UNSIGNED  NOT NULL DEFAULT 0,
 			`enabled`       TINYINT(1)    NOT NULL DEFAULT 1,
 			`cols`          TINYINT(1)    NOT NULL DEFAULT 4,
+			`col_start`     TINYINT(1)    NOT NULL DEFAULT 1,
+			`col_span`      TINYINT(1)    NOT NULL DEFAULT 4,
+			`row`           SMALLINT      NOT NULL DEFAULT 0,
+			`row_span`      TINYINT(1)    NOT NULL DEFAULT 1,
+			`name`          VARCHAR(255)  NOT NULL DEFAULT '',
 			PRIMARY KEY (`id`),
 			KEY `page_id` (`page_id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+		// ── Block library ──────────────────────────────────────────────────────
+		"CREATE TABLE IF NOT EXISTS `{$p}block_library` (
+			`id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+			`block_id`   INT UNSIGNED NOT NULL,
+			`name`       VARCHAR(255) NOT NULL,
+			`created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (`id`),
+			KEY `block_id` (`block_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
 		// ── Slideshows ─────────────────────────────────────────────────────────
@@ -474,29 +497,6 @@ if ($action === 'install') {
 			`created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (`id`),
 			KEY `form_id` (`form_id`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
-
-		// ── Wish lists ─────────────────────────────────────────────────────────
-		"CREATE TABLE IF NOT EXISTS `{$p}wishlists` (
-			`id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
-			`token`       CHAR(32)     NOT NULL,
-			`customer_id` INT UNSIGNED,
-			`email`       VARCHAR(255) NOT NULL DEFAULT '',
-			`name`        VARCHAR(255) NOT NULL DEFAULT 'My Wish List',
-			`created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (`id`),
-			UNIQUE KEY `token` (`token`),
-			KEY `customer_id` (`customer_id`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
-
-		"CREATE TABLE IF NOT EXISTS `{$p}wishlist_items` (
-			`id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
-			`wishlist_id` INT UNSIGNED NOT NULL,
-			`product_id`  INT UNSIGNED NOT NULL,
-			`added_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (`id`),
-			UNIQUE KEY `wl_prod` (`wishlist_id`,`product_id`),
-			KEY `wishlist_id` (`wishlist_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
 		// ── Menus ──────────────────────────────────────────────────────────────
@@ -573,7 +573,8 @@ if ($action === 'install') {
 			'img_fm_size'         => '50',
 			'img_fm_quality'      => '60',
 			'deepai_key'          => '',
-			'wishlist_guest_days' => '14',
+			'img_related_size'    => '200',
+			'related_max_items'   => '0',
 			'stripe_mode'         => 'test',
 		] as $k => $v) {
 			$st->execute([$k, $v]);
@@ -593,7 +594,9 @@ if ($action === 'install') {
 			['terms',           'Terms & Conditions','page',          1],
 			['sitemap',         'Site Map',         'page',           1],
 			['my-account',      'My Account',       'account',        1],
-			['wishlist',        'My Wish List',     'wishlist',       1],
+			['cart',            'Cart',             'cart',           1],
+			['checkout',        'Checkout',         'checkout',       1],
+			['product',         'Product',          'product',        1],
 		];
 		$sp = $pdo->prepare(
 			"INSERT IGNORE INTO `{$p}pages` (slug, title, page_type, status, display_order)
@@ -604,14 +607,39 @@ if ($action === 'install') {
 		}
 
 		// Seed sitemap block on sitemap page
-		$sitemap_page_id = $pdo->lastInsertId();
-		// Get sitemap page id properly
 		$sm_id = $pdo->query("SELECT id FROM `{$p}pages` WHERE slug='sitemap' LIMIT 1")->fetchColumn();
 		if ($sm_id) {
 			$pdo->prepare(
 				"INSERT IGNORE INTO `{$p}page_blocks` (page_id, block_type, settings, display_order, enabled)
 				 VALUES (?, 'sitemap', '{}', 0, 1)"
 			)->execute([$sm_id]);
+		}
+
+		// Seed core blocks for cart, checkout, and product pages
+		$core_settings = json_encode(['is_core' => true]);
+		$cart_id = $pdo->query("SELECT id FROM `{$p}pages` WHERE slug='cart' LIMIT 1")->fetchColumn();
+		if ($cart_id) {
+			$pdo->prepare(
+				"INSERT IGNORE INTO `{$p}page_blocks`
+				 (page_id, block_type, settings, display_order, enabled, cols, col_start, col_span, `row`, row_span)
+				 VALUES (?, 'cart_contents', ?, 1, 1, 4, 1, 4, 0, 1)"
+			)->execute([$cart_id, $core_settings]);
+		}
+		$checkout_id = $pdo->query("SELECT id FROM `{$p}pages` WHERE slug='checkout' LIMIT 1")->fetchColumn();
+		if ($checkout_id) {
+			$pdo->prepare(
+				"INSERT IGNORE INTO `{$p}page_blocks`
+				 (page_id, block_type, settings, display_order, enabled, cols, col_start, col_span, `row`, row_span)
+				 VALUES (?, 'checkout_form', ?, 1, 1, 4, 1, 4, 0, 1)"
+			)->execute([$checkout_id, $core_settings]);
+		}
+		$product_id = $pdo->query("SELECT id FROM `{$p}pages` WHERE slug='product' LIMIT 1")->fetchColumn();
+		if ($product_id) {
+			$pdo->prepare(
+				"INSERT IGNORE INTO `{$p}page_blocks`
+				 (page_id, block_type, settings, display_order, enabled, cols, col_start, col_span, `row`, row_span)
+				 VALUES (?, 'product_view', ?, 1, 1, 4, 1, 4, 0, 1)"
+			)->execute([$product_id, $core_settings]);
 		}
 
 		// Seed default contact form

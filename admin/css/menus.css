@@ -5,31 +5,30 @@
 	align-items: flex-start;
 }
 .menu-list-col {
-	width: 220px;
+	width: 280px;
 	flex-shrink: 0;
 }
 #menu-list {
 	list-style: none;
-	border: 1px solid var(--nc-border);
-	border-radius: var(--nc-radius);
-	overflow: hidden;
-}
-.menu-list-item { border-bottom: 1px solid var(--nc-border); }
-.menu-list-item:last-child { border-bottom: none; }
-.menu-list-btn {
-	width: 100%;
-	text-align: left;
-	padding: .55rem .75rem;
-	background: none;
-	border: none;
-	cursor: pointer;
-	font-size: .88rem;
 	display: flex;
-	align-items: center;
+	flex-direction: column;
 	gap: .4rem;
 }
-.menu-list-btn:hover { background: var(--nc-hover); }
-.menu-list-item.active .menu-list-btn { background: var(--nc-primary-muted); font-weight: 700; }
+.menu-list-item {
+	border: 1px solid var(--nc-border);
+	border-radius: var(--nc-radius);
+	background: var(--nc-bg);
+	display: flex;
+	align-items: center;
+	gap: .35rem;
+	padding: .3rem .5rem;
+	transition: border-color .12s;
+}
+.menu-list-item:hover { border-color: var(--nc-border-focus); }
+.menu-list-item.active {
+	border-color: var(--nc-primary);
+	background: var(--nc-primary-muted);
+}
 .menu-role-badge {
 	font-size: .7rem;
 	background: var(--nc-primary);
@@ -146,7 +145,6 @@
 	padding: .3rem .5rem;
 	border-bottom: 1px solid var(--nc-border);
 }
-.menu-list-item:last-child { border-bottom: none; }
 .menu-list-name {
 	flex: 1;
 	text-align: left;

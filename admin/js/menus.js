@@ -29,6 +29,7 @@ const itemsListEl  = document.getElementById('menu-items-list');
 const itemPanel    = document.getElementById('item-editor-panel');
 const secCatList   = document.getElementById('section-category-list');
 const secLinks     = document.getElementById('section-links-pages');
+const secRelated   = document.getElementById('section-related-products');
 const catChecks    = document.getElementById('cat-list-checks');
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -50,7 +51,7 @@ function populatePageSelect() {
 
 // ── Menu list ─────────────────────────────────────────────────────────────────
 function roleLabel(r) { return r === 'menu1' ? 'Horizontal' : r === 'menu2' ? 'Vertical' : ''; }
-function typeLabel(t) { return t === 'category_list' ? 'Cat. List' : 'Links'; }
+function typeLabel(t) { return t === 'category_list' ? 'Cat. List' : t === 'related_products' ? 'Related' : 'Links'; }
 
 function renderMenuList() {
 	menuListEl.innerHTML = '';
@@ -160,10 +161,16 @@ function applyMenuType(type) {
 	if (type === 'category_list') {
 		secCatList.style.display = '';
 		secLinks.style.display   = 'none';
+		if (secRelated) secRelated.style.display = 'none';
 		renderCatChecks();
+	} else if (type === 'related_products') {
+		secCatList.style.display = 'none';
+		secLinks.style.display   = 'none';
+		if (secRelated) secRelated.style.display = '';
 	} else {
 		secCatList.style.display = 'none';
 		secLinks.style.display   = '';
+		if (secRelated) secRelated.style.display = 'none';
 		renderItems();
 	}
 }

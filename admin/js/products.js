@@ -480,6 +480,7 @@
 		renderCatList([]);
 		pendingImages = [];
 		renderImageGrid();
+		if (relatedList) relatedList.innerHTML = '';
 	}
 
 	// ── Add ───────────────────────────────────────────────────────────────────
@@ -695,6 +696,116 @@
 		var ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(r => r.dataset.id);
 		await post({ action: 'reorder', ids: JSON.stringify(ids) });
 	}
+
+	// ── Related Products tab ──────────────────────────────────────────────────
+	const relSearchInput   = document.getElementById('rel-search-input');
+	const relSearchResults = document.getElementById('rel-search-results');
+	const relatedList      = document.getElementById('related-products-list');
+	let relAcTimer = null;
+
+	document.querySelector('.drawer-tab[data-panel="related"]')?.addEventListener('click', function () {
+		const productId = document.getElementById('prod-id')?.value;
+		if (productId) loadRelatedProducts(productId);
+		else renderRelatedList([]);
+	});
+
+	async function loadRelatedProducts(productId) {
+		if (!relatedList) return;
+		const res = await post({ action: 'list_related', product_id: productId });
+		if (!res.ok) return;
+		renderRelatedList(res.rows || []);
+	}
+
+	function renderRelatedList(rows) {
+		relatedList.innerHTML = '';
+		if (!rows.length) {
+			relatedList.innerHTML = '<p style="color:var(--nc-text-dim);font-size:.83rem;margin:.5rem 0">No related products yet.</p>';
+			return;
+		}
+		rows.forEach(function (r) { relatedList.appendChild(buildRelatedRow(r)); });
+	}
+
+	function buildRelatedRow(r) {
+		const productId = document.getElementById('prod-id')?.value;
+		const div = document.createElement('div');
+		div.className = 'po-card';
+		div.dataset.relId = r.id;
+		div.setAttribute('role', 'listitem');
+
+		const head = document.createElement('div');
+		head.className = 'po-card-head';
+		head.style.cursor = 'default';
+
+		const nameEl = document.createElement('span');
+		nameEl.className = 'po-card-name';
+		nameEl.textContent = r.name;
+		head.appendChild(nameEl);
+
+		if (r.sku) {
+			const skuEl = document.createElement('span');
+			skuEl.className = 'po-card-type';
+			skuEl.textContent = r.sku;
+			head.appendChild(skuEl);
+		}
+
+		const dip = document.createElement('delete-in-place');
+		dip.setAttribute('caption', '🗑');
+		dip.setAttribute('confirm', 'Remove related product?');
+		dip.addEventListener('dip-confirm', async function () {
+			div.style.transition = 'opacity .3s';
+			div.style.opacity = '0';
+			const res = await post({ action: 'remove_related', product_id: productId, related_product_id: r.id });
+			if (!res.ok) { div.style.opacity = '1'; notifyErr(res.message); return; }
+			setTimeout(function () {
+				div.remove();
+				if (!relatedList.querySelector('[data-rel-id]')) {
+					relatedList.innerHTML = '<p style="color:var(--nc-text-dim);font-size:.83rem;margin:.5rem 0">No related products yet.</p>';
+				}
+			}, 320);
+		});
+		head.appendChild(dip);
+		div.appendChild(head);
+		return div;
+	}
+
+	async function showRelatedProducts(q) {
+		const productId = document.getElementById('prod-id')?.value;
+		const res = await post({ action: 'search_products', q: q || '', product_id: productId || 0 });
+		if (!res.ok) return;
+		relSearchResults.innerHTML = '';
+		const available = (res.rows || []).filter(function (r) {
+			return !relatedList.querySelector('[data-rel-id="' + r.id + '"]');
+		});
+		if (!available.length) { relSearchResults.style.display = 'none'; return; }
+		available.forEach(function (r) {
+			const li = document.createElement('li');
+			li.setAttribute('role', 'option');
+			li.innerHTML = esc(r.name) + (r.sku ? '<span class="opt-autocomplete-type">' + esc(r.sku) + '</span>' : '');
+			li.addEventListener('mousedown', async function (e) {
+				e.preventDefault();
+				relSearchResults.style.display = 'none';
+				relSearchInput.value = '';
+				const pid = document.getElementById('prod-id')?.value;
+				if (!pid) return;
+				const addRes = await post({ action: 'add_related', product_id: pid, related_product_id: r.id });
+				if (!addRes.ok) { notifyErr(addRes.message); return; }
+				const emptyMsg = relatedList.querySelector('p');
+				if (emptyMsg) emptyMsg.remove();
+				relatedList.appendChild(buildRelatedRow(addRes.row));
+			});
+			relSearchResults.appendChild(li);
+		});
+		relSearchResults.style.display = '';
+	}
+
+	relSearchInput?.addEventListener('focus', function () { showRelatedProducts(''); });
+	relSearchInput?.addEventListener('input', function () {
+		clearTimeout(relAcTimer);
+		relAcTimer = setTimeout(() => showRelatedProducts(this.value.trim()), 200);
+	});
+	relSearchInput?.addEventListener('blur', function () {
+		setTimeout(function () { if (relSearchResults) relSearchResults.style.display = 'none'; }, 200);
+	});
 
 	// ── Init ──────────────────────────────────────────────────────────────────
 	Promise.all([fetchRowTemplate(), loadProducts(), loadCategories()]);

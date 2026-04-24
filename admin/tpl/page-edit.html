@@ -1,102 +1,144 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{if $edit_page}{$edit_page.title|escape} — Edit Page{else}New Page{/if} — new-cart</title>
-<link rel="stylesheet" href="/css/vars.css">
-<link rel="stylesheet" href="{$url_admin_real}css/vars.css">
-<link rel="stylesheet" href="{$url_admin_real}css/categories.css">
-<link rel="stylesheet" href="{$url_admin_real}css/pages.css">
+{extends file="layout.html"}
+
+{block name="head"}
 <link rel="stylesheet" href="{$url_admin_real}css/filemanager.css">
 <link rel="stylesheet" href="{$url_admin_real}css/page-edit.css">
-<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
-<link rel="stylesheet" href="{$url_root}js/vendor/trumbowyg/dist/ui/trumbowyg.min.css">
-</head>
-<body class="page-editor-body">
+{/block}
 
-<div id="pe-layout">
+{block name="content"}
 
-	{* ── Top bar ── *}
-	<div id="pe-topbar">
-		<a href="{$url_admin}?route=pages" id="pe-back" title="Back to pages">&#8592; Pages</a>
-		<input type="text" id="pe-title"
-		       value="{$edit_page.title|default:''|escape}"
-		       placeholder="Page title…"
-		       aria-label="Page title"
-		       maxlength="255">
-		<div id="pe-topbar-right">
+{* ── Page editor top bar ── *}
+<div id="pe-topbar">
+	<input type="text" id="pe-title"
+	       value="{$edit_page.title|default:''|escape}"
+	       placeholder="Page title…" aria-label="Page title" maxlength="255">
+	{if $edit_page.page_type && $edit_page.page_type !== 'page'}
+	<span class="badge-system pe-system-badge">&#128274; System Page</span>
+	{/if}
+	<div id="pe-topbar-right">
+		{if $all_pages}
+		<select id="pe-page-switcher" aria-label="Switch page" title="Switch to another page">
+			<option value="">Switch page…</option>
+			{foreach $all_pages as $ap}
+			<option value="{$ap.id}"{if $ap.id == $edit_page_id} selected{/if}>{$ap.title|escape}</option>
+			{/foreach}
+		</select>
+		{/if}
+		<button id="pe-props-btn">Properties</button>
+		<button id="pe-preview-btn"{if !$edit_page_id} style="display:none"{/if}>Preview</button>
+		<button id="pe-clear-btn">Clear Canvas</button>
+		<button id="pe-save-btn" class="pe-btn-primary">Save</button>
+	</div>
+</div>
+
+{* ── Block type palette ── *}
+{assign var="has_slideshows" value=$slideshows|@count}
+{assign var="has_menus"      value=$menus|@count}
+<div id="pe-palette">
+	<button class="pe-pal-btn" draggable="true" data-type="rich_text">&#128195; Rich Text</button>
+	<button class="pe-pal-btn" draggable="true" data-type="html">&#10094;&#10095; HTML</button>
+	{if $has_slideshows}
+	<button class="pe-pal-btn" draggable="true" data-type="slideshow">&#127923; Slideshow</button>
+	{else}
+	<a class="pe-pal-link" href="{$url_admin}?route=slideshows">&#127923; Slideshow — <em>add one</em></a>
+	{/if}
+	{if $has_menus}
+	<button class="pe-pal-btn" draggable="true" data-type="menu">&#9776; Menu</button>
+	{else}
+	<a class="pe-pal-link" href="{$url_admin}?route=menus">&#9776; Menu — <em>add one</em></a>
+	{/if}
+	<button class="pe-pal-btn" draggable="true" data-type="featured_products">&#128202; Products</button>
+	{if $has_forms}
+	<button class="pe-pal-btn" draggable="true" data-type="contact_form">&#9993; Form</button>
+	{else}
+	<a class="pe-pal-link" href="{$url_admin}?route=setup">&#9993; Form — <em>add one</em></a>
+	{/if}
+	<button class="pe-pal-btn" draggable="true" data-type="sitemap">&#128506; Sitemap</button>
+</div>
+
+{* ── 4-column canvas ── *}
+<div id="pe-canvas" role="list" aria-label="Page blocks">
+	<div id="pe-canvas-empty" class="pe-canvas-empty">
+		Click a block type above to add it to the page
+	</div>
+</div>
+
+{* ── Page properties drawer ── *}
+<me-drawer id="pe-props-drawer">
+	<drawer-head>
+		<h2>Page Properties</h2>
+		<button class="drawer-close" id="pe-props-close">&times;</button>
+	</drawer-head>
+	<drawer-content id="pe-props-content">
+		<div class="df">
+			<label for="pe-status">Status</label>
 			<select id="pe-status" aria-label="Page status">
 				<option value="0"{if $edit_page.status == 0} selected{/if}>Draft</option>
 				<option value="1"{if !$edit_page || $edit_page.status == 1} selected{/if}>Public</option>
 				<option value="2"{if $edit_page.status == 2} selected{/if}>With Link</option>
 			</select>
-			<button class="btn btn-secondary btn-sm" id="pe-preview-btn"
-			        {if !$edit_page_id}style="display:none"{/if}>Preview</button>
-			<button class="btn btn-primary btn-sm" id="pe-save-btn">Save</button>
 		</div>
+		<div class="df">
+			<label for="pe-slug">Slug</label>
+			<input type="text" id="pe-slug"
+			       value="{$edit_page.slug|default:''|escape}"
+			       placeholder="auto-generated" maxlength="255"
+			       {if $edit_page.page_type && $edit_page.page_type !== 'page'}readonly title="Slug is locked for system pages"{/if}>
+		</div>
+		<div class="df">
+			<label for="pe-is-home">Homepage</label>
+			<ios-toggle id="pe-is-home"
+			            {if $edit_page_id && $edit_page_id == $home_page_id}checked{/if}
+			            aria-label="Set as homepage"></ios-toggle>
+		</div>
+		<div class="section-head" style="margin-top:.5rem">SEO</div>
+		<div class="df">
+			<label for="pe-seo-title">Title</label>
+			<input type="text" id="pe-seo-title"
+			       value="{$edit_page.seo_title|default:''|escape}" maxlength="300">
+		</div>
+		<div class="df">
+			<label for="pe-seo-keywords">Keywords</label>
+			<input type="text" id="pe-seo-keywords"
+			       value="{$edit_page.seo_keywords|default:''|escape}" maxlength="500">
+		</div>
+		<div class="df">
+			<label for="pe-seo-desc">Description</label>
+			<textarea id="pe-seo-desc" rows="3" maxlength="500">{$edit_page.seo_description|default:''|escape}</textarea>
+		</div>
+	</drawer-content>
+	<drawer-foot>
+		<button class="btn btn-primary" id="pe-props-save">Save Properties</button>
+	</drawer-foot>
+</me-drawer>
+
+{* ── Image properties floating panel ── *}
+<div id="pe-img-panel" style="display:none" role="dialog" aria-label="Image properties">
+	<div class="pe-img-panel-head">
+		<span>Image</span>
+		<button id="pe-img-panel-close" aria-label="Close">&times;</button>
 	</div>
-
-	<div id="pe-body">
-
-		{* ── Left: block palette + SEO ── *}
-		<div id="pe-left">
-			<div class="pe-panel-head">Add Block</div>
-			<div id="pe-block-types">
-				<button class="pe-block-type-btn" data-type="rich_text">&#128195; Rich Text</button>
-				<button class="pe-block-type-btn" data-type="html">&#10094;&#10095; Custom HTML</button>
-				<button class="pe-block-type-btn" data-type="slideshow">&#127923; Slideshow</button>
-				<button class="pe-block-type-btn" data-type="featured_products">&#11088; Featured Products</button>
-				<button class="pe-block-type-btn" data-type="best_sellers">&#128200; Best Sellers</button>
-				<button class="pe-block-type-btn" data-type="best_sellers_category">&#128201; Best Sellers by Category</button>
-				<button class="pe-block-type-btn" data-type="new_arrivals">&#127381; New Arrivals</button>
-				<button class="pe-block-type-btn" data-type="contact_form">&#9993; Contact Form</button>
-				<button class="pe-block-type-btn" data-type="sitemap">&#128506; Site Map</button>
-			</div>
-
-			<div class="pe-panel-head" style="margin-top:1.5rem">SEO</div>
-			<div class="pe-seo-fields">
-				<div class="df">
-					<label for="pe-slug">Slug</label>
-					<input type="text" id="pe-slug"
-					       value="{$edit_page.slug|default:''|escape}"
-					       placeholder="auto-generated" maxlength="255">
-				</div>
-				<div class="df">
-					<label for="pe-seo-title">SEO Title</label>
-					<input type="text" id="pe-seo-title"
-					       value="{$edit_page.seo_title|default:''|escape}"
-					       maxlength="300">
-				</div>
-				<div class="df">
-					<label for="pe-seo-keywords">Keywords</label>
-					<input type="text" id="pe-seo-keywords"
-					       value="{$edit_page.seo_keywords|default:''|escape}"
-					       maxlength="500">
-				</div>
-				<div class="df">
-					<label for="pe-seo-desc">Meta Description</label>
-					<textarea id="pe-seo-desc" rows="2" maxlength="500">{$edit_page.seo_description|default:''|escape}</textarea>
-				</div>
-			</div>
-		</div>
-
-		{* ── Center: canvas ── *}
-		<div id="pe-canvas-wrap">
-			<div id="pe-canvas" aria-label="Page blocks canvas" role="list">
-				<div id="pe-canvas-empty" class="pe-canvas-empty">
-					Add blocks from the left panel
-				</div>
-			</div>
-		</div>
-
-		{* ── Right: block properties ── *}
-		<div id="pe-right">
-			<div class="pe-panel-head">Block Properties</div>
-			<div id="pe-props-empty" class="pe-props-hint">Select a block to edit its settings</div>
-			<div id="pe-props-content" style="display:none"></div>
-		</div>
-
+	<div class="pe-img-panel-body">
+		<div class="df"><label for="pi-border">Border (px)</label>
+			<input type="number" id="pi-border" min="0" max="20" value="0" style="width:70px"></div>
+		<div class="df"><label for="pi-align">Align</label>
+			<select id="pi-align">
+				<option value="">None</option><option value="left">Left</option>
+				<option value="right">Right</option><option value="center">Center</option>
+			</select></div>
+		<div class="df"><label for="pi-hspace">H-Space (px)</label>
+			<input type="number" id="pi-hspace" min="0" max="100" value="0" style="width:70px"></div>
+		<div class="df"><label for="pi-vspace">V-Space (px)</label>
+			<input type="number" id="pi-vspace" min="0" max="100" value="0" style="width:70px"></div>
+		<div class="df"><label for="pi-link">Link URL</label>
+			<input type="text" id="pi-link" maxlength="500" placeholder="https://…"></div>
+		<div class="df"><label for="pi-target">Target</label>
+			<select id="pi-target">
+				<option value="">Same window</option><option value="_blank">New window</option>
+			</select></div>
+	</div>
+	<div class="pe-img-panel-foot">
+		<button class="btn btn-primary btn-sm" id="pe-img-panel-save">Save</button>
 	</div>
 </div>
 
@@ -106,23 +148,16 @@
        value="{foreach $slideshows as $s}{$s.id}:{$s.name|escape:'html'}|{/foreach}">
 <input type="hidden" id="pe-categories-data"
        value="{foreach $categories as $c}{$c.id}:{$c.name|escape:'html'}|{/foreach}">
+<input type="hidden" id="pe-menus-data"
+       value="{foreach $menus as $m}{$m.id}:{$m.name|escape:'html'}|{/foreach}">
 
-{* File manager container (hidden, for openFilePicker) *}
-<div id="fm-container" style="display:none"></div>
+{/block}
 
+{block name="scripts"}
+{if $admin_page_scripts}{$admin_page_scripts nofilter}{/if}
 <script>
-var NC = {
-	adminUrl:  '{$url_admin}',
-	rootUrl:   '{$url_root}',
-	adminReal: '{$url_admin_real}'
-};
+var NC = { adminUrl:'{$url_admin}', rootUrl:'{$url_root}', adminReal:'{$url_admin_real}' };
 </script>
-<script src="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.js"></script>
-<script src="{$url_root}js/vendor/delete-in-place.js"></script>
-<script src="{$url_root}js/vendor/debounce-button.js"></script>
-<script src="{$url_root}js/vendor/jquery/jquery.min.js"></script>
-<script src="{$url_root}js/vendor/trumbowyg/dist/trumbowyg.min.js"></script>
-<script src="{$url_admin_real}js/filemanager.js?v=151"></script>
+<script src="{$url_admin_real}js/filemanager.js?v=170"></script>
 <script src="{$url_admin_real}js/page-edit.js"></script>
-</body>
-</html>
+{/block}

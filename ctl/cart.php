@@ -7,7 +7,6 @@ if ($action === 'add') {
 	$product_id = (int)post('product_id');
 	$qty        = max(1, (int)post('qty', 1));
 
-	// Collect options: {po_id: pov_id}
 	$options = [];
 	$raw_opts = post('options', []);
 	if (is_array($raw_opts)) {
@@ -24,7 +23,11 @@ if ($action === 'add') {
 	}
 
 	Cart::add($product_id, $qty, $options);
-	echo json_encode(['ok' => true, 'cart_count' => Cart::count()]);
+	echo json_encode([
+		'ok'           => true,
+		'cart_count'   => Cart::count(),
+		'cart_subtotal'=> Cart::subtotal(),
+	]);
 	exit;
 }
 
@@ -57,9 +60,18 @@ if ($action === 'remove') {
 }
 
 // ── View cart page ─────────────────────────────────────────────────────────────
+$p = DB_PREFIX;
+
+$cart_page = DB::row("SELECT * FROM `{$p}pages` WHERE slug='cart'");
+$blocks    = $cart_page ? hydrate_page_blocks($cart_page['id'], $p, $smarty) : [];
+
+$img_cart_size = max(40, (int)(DB::val("SELECT `value` FROM `{$p}settings` WHERE `key`='img_cart_size'") ?: 100));
+
 catalog_sidebar($smarty);
-$items = Cart::get();
-$smarty->assign('items',    $items);
-$smarty->assign('subtotal', money(Cart::subtotal()));
-$smarty->assign('page_type', 'cart');
+$smarty->assign('items',         Cart::get());
+$smarty->assign('subtotal',      money(Cart::subtotal()));
+$smarty->assign('page',          $cart_page);
+$smarty->assign('blocks',        $blocks);
+$smarty->assign('img_cart_size', $img_cart_size);
+$smarty->assign('page_type',     'cart');
 $smarty->display('cart.html');

@@ -58,6 +58,25 @@ CREATE TABLE IF NOT EXISTS `nc_incomplete` (
 -- Add sku to products
 ALTER TABLE `nc_products`
     ADD COLUMN `sku` VARCHAR(128) NOT NULL DEFAULT '' AFTER `slug`;
+
+-- Related products
+CREATE TABLE IF NOT EXISTS `nc_product_related` (
+    `product_id`         INT UNSIGNED NOT NULL,
+    `related_product_id` INT UNSIGNED NOT NULL,
+    `display_order`      INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (`product_id`, `related_product_id`),
+    KEY `related_product_id` (`related_product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- System pages: correct page_type for cart/checkout and add product page
+UPDATE nc_pages SET page_type='cart'     WHERE slug='cart'     AND page_type='page';
+UPDATE nc_pages SET page_type='checkout' WHERE slug='checkout' AND page_type='page';
+INSERT IGNORE INTO nc_pages (slug, title, page_type, status, display_order)
+    VALUES ('product', 'Product', 'product', 1, 999);
+INSERT IGNORE INTO nc_page_blocks
+    (page_id, block_type, settings, display_order, enabled, cols, col_start, col_span, `row`, row_span)
+    SELECT id, 'product_view', '{"is_core":true}', 1, 1, 4, 1, 4, 0, 1
+    FROM nc_pages WHERE slug='product';
 ```
 
 ## Requirements

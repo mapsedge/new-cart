@@ -4,12 +4,14 @@
 {block name="meta_desc"}{$product.seo_description|escape|default:$product.description|strip_tags|truncate:200|escape}{/block}
 
 {block name="content"}
+{include file="_blocks.html" blocks=$product_blocks_above}
 <div class="product-detail">
 
 	{* ── Gallery ── *}
 	<div class="product-gallery">
 		<div class="product-gallery-main" id="gallery-main" role="button"
-		     aria-label="View full-size image" tabindex="0">
+		     aria-label="View full-size image" tabindex="0"
+		     style="max-width:{$img_product_width}px">
 			{if $images}
 				<img id="main-image"
 				     src="{$images[0].filename|escape}"
@@ -44,10 +46,14 @@
 	<div class="product-info">
 		<h1>{$product.name|escape}</h1>
 
-		<div class="product-price-row">
-			<span class="product-price">{$site_currency}{$product.price|string_format:"%.2f"}</span>
+		<div class="product-price-block">
 			{if $product.list_price && $product.list_price > $product.price}
-				<span class="product-list-price">{$site_currency}{$product.list_price|string_format:"%.2f"}</span>
+				{assign var="saving_pct" value=($product.list_price - $product.price) / $product.list_price * 100}
+				<div class="product-price">{$site_currency}{$product.price|string_format:"%.2f"}</div>
+				<div class="product-list-price">List: {$site_currency}{$product.list_price|string_format:"%.2f"}</div>
+				<div class="product-you-save">You save {$saving_pct|string_format:"%.0f"}%</div>
+			{else}
+				<div class="product-price">{$site_currency}{$product.price|string_format:"%.2f"}</div>
 			{/if}
 		</div>
 
@@ -177,43 +183,51 @@
 		</div>
 		<div id="add-to-cart-msg" style="margin-top:.5rem;font-size:.88rem" aria-live="polite"></div>
 
-		{* ── Wish list ── *}
-		<div class="wl-add-wrap" style="margin-top:.85rem">
-			<button class="btn btn-secondary" id="btn-add-to-wl"
-			        data-product-id="{$product.id}"
-			        aria-haspopup="listbox"
-			        aria-expanded="false">
-				&#10084; Add to Wish List
-			</button>
-			<div id="wl-dropdown" class="wl-dropdown" role="listbox" aria-label="Wish lists" style="display:none">
-				<div id="wl-list-items">
-					<div class="wl-loading">Loading…</div>
-				</div>
-				<div class="wl-new">
-					<input type="text" id="wl-new-name" placeholder="New list name…"
-					       aria-label="New wish list name" maxlength="255">
-					<button class="btn btn-primary btn-sm" id="btn-wl-create">Create &amp; Add</button>
-				</div>
-			</div>
-			<div id="wl-msg" style="font-size:.85rem;margin-top:.3rem" aria-live="polite"></div>
-		</div>
 
 	</div>
 </div>
 
 {* ── Description tabs ── *}
 {if $product.description_long || $product.description}
-<div class="product-tabs">
-	<div class="product-tab-btns" role="tablist">
-		<button class="product-tab-btn active" data-tab="description" role="tab"
-		        aria-selected="true" aria-controls="tab-description">Description</button>
-	</div>
-	<div class="product-tab-panel active" id="tab-description" role="tabpanel">
-		{if $product.description_long}
-			{$product.description_long}
-		{elseif $product.description}
-			<p>{$product.description|escape}</p>
-		{/if}
+<div class="cart-product-description">
+	{if $product.description_long}
+		{$product.description_long}
+	{elseif $product.description}
+		<p>{$product.description|escape}</p>
+	{/if}
+</div>
+{/if}
+
+{include file="_blocks.html" blocks=$product_blocks_below}
+
+{* ── Related Products ── *}
+{if $related_products}
+<div class="related-products-wrap">
+	<div class="block-related-products" style="--rel-thumb-size:{$rel_thumb_size}px">
+		<h2 class="related-products-heading">Related Products</h2>
+		<div class="rel-grid">
+			{foreach $related_products as $prod}
+			<a class="rel-item" href="{$url_root}product/{$prod.slug|escape}" aria-label="{$prod.name|escape}">
+				<div class="rel-thumb">
+					{if $prod.image}
+						<img src="{$prod.image|escape}" alt="{$prod.name|escape}" loading="lazy">
+					{else}
+						<div class="product-card-no-image" aria-hidden="true">&#128247;</div>
+					{/if}
+				</div>
+				<div class="rel-body">
+					<div class="rel-name">{$prod.name|escape}</div>
+					{if $prod.description}<div class="rel-desc">{$prod.description|escape|truncate:120}</div>{/if}
+					<div class="rel-price">
+						{if $prod.list_price && $prod.list_price > $prod.price}
+							<span class="rel-list-price">{$site_currency}{$prod.list_price|string_format:"%.2f"}</span>
+						{/if}
+						{$site_currency}{$prod.price|string_format:"%.2f"}
+					</div>
+				</div>
+			</a>
+			{/foreach}
+		</div>
 	</div>
 </div>
 {/if}
@@ -355,24 +369,21 @@ if (addBtn) {
 		const data = await res.json();
 
 		if (data.ok) {
-			msgEl.textContent = 'Added to cart!';
-			msgEl.style.color = '#16a34a';
-			// Update cart count in header
-			const countEl = document.querySelector('.cart-count');
-			if (data.cart_count > 0) {
-				if (countEl) {
-					countEl.textContent = data.cart_count;
-				} else {
-					const cartLink = document.querySelector('#store-cart-summary a');
-					if (cartLink) {
-						const span = document.createElement('span');
-						span.className = 'cart-count';
-						span.textContent = data.cart_count;
-						cartLink.insertBefore(span, cartLink.firstChild.nextSibling);
-					}
-				}
+			msgEl.textContent = '';
+			if (typeof window.updateCartLabel === 'function') {
+				window.updateCartLabel(data.cart_count, data.cart_subtotal);
 			}
-			setTimeout(() => { msgEl.textContent = ''; }, 3000);
+			// Green checkmark overlay: fade in, hold 1s, fade out
+			const check = document.createElement('span');
+			check.className = 'atc-check';
+			check.setAttribute('aria-hidden', 'true');
+			check.textContent = '✓';
+			addBtn.appendChild(check);
+			requestAnimationFrame(() => requestAnimationFrame(() => { check.style.opacity = '1'; }));
+			setTimeout(() => {
+				check.style.opacity = '0';
+				check.addEventListener('transitionend', () => check.remove(), { once: true });
+			}, 1200);
 		} else {
 			msgEl.textContent = data.message || 'Could not add to cart.';
 			msgEl.style.color = '#dc2626';
@@ -380,71 +391,49 @@ if (addBtn) {
 	});
 }
 
-// ── Wish list ───────────────────────────────────────────────────────────────
-const wlBtn      = document.getElementById('btn-add-to-wl');
-const wlDropdown = document.getElementById('wl-dropdown');
-const wlMsg      = document.getElementById('wl-msg');
-const productId  = wlBtn?.dataset.productId;
-
-if (wlBtn) {
-	wlBtn.addEventListener('click', async function() {
-		const expanded = wlDropdown.style.display !== 'none';
-		if (expanded) {
-			wlDropdown.style.display = 'none';
-			wlBtn.setAttribute('aria-expanded','false');
-			return;
-		}
-		wlBtn.setAttribute('aria-expanded','true');
-		wlDropdown.style.display = '';
-		// Load lists
-		const fd = new FormData(); fd.append('action','get_lists');
-		const res = await fetch('/?route=wishlist',{method:'POST',body:fd}).then(r=>r.json());
-		const listItems = document.getElementById('wl-list-items');
-		listItems.innerHTML = '';
-		if (res.lists && res.lists.length) {
-			res.lists.forEach(function(l) {
-				const btn = document.createElement('button');
-				btn.className = 'wl-list-btn';
-				btn.setAttribute('role','option');
-				btn.textContent = l.name;
-				btn.addEventListener('click', async function() {
-					await wlAdd(l.token);
-				});
-				listItems.appendChild(btn);
-			});
-		} else {
-			listItems.innerHTML = '<div style="font-size:.82rem;color:var(--c-text-dim);padding:.3rem .5rem">No lists yet</div>';
-		}
-	});
-}
-
-async function wlAdd(token) {
-	wlDropdown.style.display = 'none';
-	wlBtn?.setAttribute('aria-expanded','false');
-	const fd = new FormData();
-	fd.append('action','add'); fd.append('token',token); fd.append('product_id',productId);
-	const res = await fetch('/?route=wishlist',{method:'POST',body:fd}).then(r=>r.json());
-	wlMsg.textContent = res.ok ? '❤ Added to wish list!' : (res.message||'Could not add.');
-	wlMsg.style.color = res.ok ? '#16a34a' : '#dc2626';
-	setTimeout(() => { wlMsg.textContent=''; }, 3000);
-}
-
-document.getElementById('btn-wl-create')?.addEventListener('click', async function() {
-	const name = document.getElementById('wl-new-name')?.value.trim() || 'My Wish List';
-	const fd1 = new FormData(); fd1.append('action','create'); fd1.append('name',name);
-	const res = await fetch('/?route=wishlist',{method:'POST',body:fd1}).then(r=>r.json());
-	if (res.ok) await wlAdd(res.list.token);
-});
-
-// Close dropdown on outside click
-document.addEventListener('click', function(e) {
-	if (wlDropdown && !wlDropdown.contains(e.target) && e.target !== wlBtn) {
-		wlDropdown.style.display = 'none';
-		wlBtn?.setAttribute('aria-expanded','false');
-	}
-});
-
 })();
+
+// ── Page blocks: slideshows ────────────────────────────────────────────────
+document.querySelectorAll('.slideshow').forEach(function(ss) {
+	const slides = ss.querySelectorAll('.slideshow-slide');
+	const dots   = ss.querySelectorAll('.slideshow-dot');
+	const prev   = ss.querySelector('.slideshow-prev');
+	const next   = ss.querySelector('.slideshow-next');
+	const interval = parseInt(ss.dataset.interval) || 5000;
+	ss.classList.add('trans-' + (ss.dataset.transition || 'fade'));
+	let cur = 0, timer = null;
+	function goTo(n) {
+		slides[cur].classList.remove('active'); dots[cur]?.classList.remove('active');
+		cur = (n + slides.length) % slides.length;
+		slides[cur].classList.add('active'); dots[cur]?.classList.add('active');
+	}
+	function start() { if (slides.length > 1) timer = setInterval(() => goTo(cur + 1), interval); }
+	function stop()  { clearInterval(timer); timer = null; }
+	if (prev) prev.addEventListener('click', function() { stop(); goTo(cur - 1); });
+	if (next) next.addEventListener('click', function() { stop(); goTo(cur + 1); });
+	dots.forEach((d, i) => d.addEventListener('click', function() { stop(); goTo(i); }));
+	ss.addEventListener('mouseenter', stop); ss.addEventListener('mouseleave', start);
+	let tx = 0;
+	ss.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, {passive:true});
+	ss.addEventListener('touchend', e => { const d = tx - e.changedTouches[0].clientX; if (Math.abs(d) > 40) { stop(); goTo(cur + (d > 0 ? 1 : -1)); } }, {passive:true});
+	start();
+});
+
+// ── Page blocks: contact forms ─────────────────────────────────────────────
+document.querySelectorAll('.contact-form').forEach(function(form) {
+	form.addEventListener('submit', async function(e) {
+		e.preventDefault();
+		const msg = form.querySelector('.cf-msg'), btn = form.querySelector('[type=submit]');
+		const fd = new FormData(form);
+		fd.append('action', 'submit'); fd.append('form_id', form.dataset.formId);
+		btn.disabled = true;
+		const res = await fetch('/?route=contact', { method:'POST', body:fd }).then(r=>r.json());
+		btn.disabled = false;
+		msg.textContent = res.ok ? (res.message || 'Message sent. Thank you!') : (res.message || 'Could not send message.');
+		msg.style.color = res.ok ? '#16a34a' : '#dc2626';
+		if (res.ok) form.reset();
+	});
+});
 {/literal}
 </script>
 {/block}

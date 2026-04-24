@@ -1,0 +1,202 @@
+{if $blocks}
+<div class="page-blocks-grid">
+{foreach $blocks as $block}
+	<div class="page-block-cell" style="grid-column:{$block.grid_col_start}/span {$block.grid_col_span};grid-row:{$block.grid_row}{if $block.grid_row_span > 1}/span {$block.grid_row_span}{/if};">
+	{if $block.block_type === 'rich_text'}
+		<div class="page-block block-rich-text">
+			{$block.settings.content|default:""}
+		</div>
+
+	{elseif $block.block_type === 'html'}
+		<div class="page-block block-html">
+			{$block.settings.html|default:""}
+		</div>
+
+	{elseif $block.block_type === 'image_text'}
+		<div class="page-block block-image-text">
+			{if $block.settings.image}
+			<div class="image-text-img">
+				<img src="{$block.settings.image|default:""|escape}" alt="{$block.settings.heading|escape|default:''}">
+			</div>
+			{/if}
+			<div class="image-text-body">
+				{if $block.settings.heading}<h2>{$block.settings.heading|escape}</h2>{/if}
+				{if $block.settings.text}<p>{$block.settings.text|escape|nl2br}</p>{/if}
+			</div>
+		</div>
+
+	{elseif $block.block_type === 'slideshow'}
+		{if isset($block.slides) && $block.slides}
+		<div class="page-block block-slideshow slideshow"
+		     data-transition="{$block.slideshow.transition|escape}"
+		     data-interval="{$block.slideshow.interval}"
+		     role="region" aria-label="Image slideshow"
+		     aria-roledescription="carousel">
+			<div class="slideshow-track">
+				{foreach $block.slides as $i => $slide}
+				<div class="slideshow-slide{if $i === 0} active{/if}"
+				     role="group"
+				     aria-roledescription="slide"
+				     aria-label="Slide {$i+1} of {$block.slides|count}">
+					{if $slide.image}
+					<img src="{$slide.image|escape}" alt="{$slide.heading|escape|default:'Slide image'}" loading="lazy">
+					{/if}
+					{if $slide.heading || $slide.subtext || $slide.btn_label}
+					<div class="slideshow-caption">
+						{if $slide.heading}<h2>{$slide.heading|escape}</h2>{/if}
+						{if $slide.subtext}<p>{$slide.subtext|escape}</p>{/if}
+						{if $slide.btn_label && $slide.btn_url}
+						<a class="btn btn-primary" href="{$slide.btn_url|escape}">{$slide.btn_label|escape}</a>
+						{/if}
+					</div>
+					{/if}
+				</div>
+				{/foreach}
+			</div>
+			{if $block.slides|count > 1}
+			<button class="slideshow-prev" aria-label="Previous slide">&#8249;</button>
+			<button class="slideshow-next" aria-label="Next slide">&#8250;</button>
+			<div class="slideshow-dots" role="tablist" aria-label="Slide navigation">
+				{foreach $block.slides as $i => $slide}
+				<button class="slideshow-dot{if $i === 0} active{/if}"
+				        role="tab"
+				        aria-selected="{if $i === 0}true{else}false{/if}"
+				        aria-label="Go to slide {$i+1}"></button>
+				{/foreach}
+			</div>
+			{/if}
+		</div>
+		{/if}
+
+	{elseif in_array($block.block_type, ['featured_products','best_sellers','new_arrivals','best_sellers_category'])}
+		{if isset($block.products) && $block.products}
+		<div class="page-block block-products">
+			{if $block.heading}<h2 class="block-heading">{$block.heading|escape}</h2>{/if}
+			<div class="product-grid">
+				{foreach $block.products as $prod}
+				<a class="product-card" href="{$url_root}product/{$prod.slug|escape}" aria-label="{$prod.name|escape}">
+					<div class="product-card-img">
+						{if $prod.image}
+							<img src="{$prod.image|escape}" alt="{$prod.name|escape}" loading="lazy">
+						{else}
+							<div class="product-card-no-image" aria-hidden="true">&#128247;</div>
+						{/if}
+					</div>
+					<div class="product-card-body">
+						<div class="product-card-name">{$prod.name|escape}</div>
+						<div class="product-card-price">
+							{if $prod.list_price && $prod.list_price > $prod.price}
+								<span class="product-card-list-price">{$site_currency}{$prod.list_price|string_format:"%.2f"}</span>
+							{/if}
+							{$site_currency}{$prod.price|string_format:"%.2f"}
+						</div>
+					</div>
+				</a>
+				{/foreach}
+			</div>
+		</div>
+		{/if}
+
+	{elseif $block.block_type === 'menu'}
+		{if isset($block.menu_items) && $block.menu_items}
+		<nav class="page-block block-menu">
+			{foreach $block.menu_items as $item}
+			{if $item.enabled}
+			<a href="{if $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}
+			         {elseif $item.item_type === 'category' && $item.category_slug}{$url_root}category/{$item.category_slug|escape}
+			         {else}{$item.url|default:'#'|escape}{/if}"
+			   class="block-menu-link">
+				{$item.label|escape}
+				{if $item.show_count && isset($item.product_count)}
+				<span class="block-menu-count">({$item.product_count})</span>
+				{/if}
+			</a>
+			{/if}
+			{/foreach}
+		</nav>
+		{/if}
+
+	{elseif $block.block_type === 'sitemap'}
+		<div class="page-block block-sitemap">
+			{if $block.generated_html}
+				{$block.generated_html}
+			{else}
+				<p style="color:var(--c-text-dim);font-style:italic">Site map not yet generated. Visit the admin Pages section and click "Generate Site Map".</p>
+			{/if}
+		</div>
+
+	{elseif $block.block_type === 'related_products'}
+		{if isset($block.products) && $block.products}
+		<div class="page-block block-related-products" style="--rel-thumb-size:{$rel_thumb_size}px">
+			{if $block.heading}<h2 class="block-heading">{$block.heading|escape}</h2>{/if}
+			<div class="rel-grid">
+				{foreach $block.products as $prod}
+				<a class="rel-item" href="{$url_root}product/{$prod.slug|escape}" aria-label="{$prod.name|escape}">
+					<div class="rel-thumb">
+						{if $prod.image}
+							<img src="{$prod.image|escape}" alt="{$prod.name|escape}" loading="lazy">
+						{else}
+							<div class="product-card-no-image" aria-hidden="true">&#128247;</div>
+						{/if}
+					</div>
+					<div class="rel-body">
+						<div class="rel-name">{$prod.name|escape}</div>
+						{if $prod.description}<div class="rel-desc">{$prod.description|escape|truncate:120}</div>{/if}
+						<div class="rel-price">
+							{if $prod.list_price && $prod.list_price > $prod.price}
+								<span class="rel-list-price">{$site_currency}{$prod.list_price|string_format:"%.2f"}</span>
+							{/if}
+							{$site_currency}{$prod.price|string_format:"%.2f"}
+						</div>
+					</div>
+				</a>
+				{/foreach}
+			</div>
+		</div>
+		{/if}
+
+	{elseif $block.block_type === 'contact_form'}
+		{if isset($block.form)}
+		<div class="page-block block-contact-form">
+			<form class="contact-form" id="contact-form-{$block.form.id}"
+			      data-form-id="{$block.form.id}" novalidate>
+				{foreach $block.form.fields as $field}
+				<div class="cf-field">
+					<label for="cf-{$field.name|escape}-{$block.form.id}">
+						{$field.label|escape}
+						{if $field.required}<span class="field-required" aria-hidden="true">*</span>{/if}
+					</label>
+					{if $field.type === 'textarea'}
+						<textarea id="cf-{$field.name|escape}-{$block.form.id}"
+						          name="{$field.name|escape}" rows="5"
+						          {if $field.required}required aria-required="true"{/if}></textarea>
+					{elseif $field.type === 'select'}
+						<select id="cf-{$field.name|escape}-{$block.form.id}"
+						        name="{$field.name|escape}"
+						        {if $field.required}required aria-required="true"{/if}>
+							<option value="">— Select —</option>
+							{foreach $field.options as $opt}
+							<option value="{$opt|escape}">{$opt|escape}</option>
+							{/foreach}
+						</select>
+					{else}
+						<input type="{$field.type|default:'text'|escape}"
+						       id="cf-{$field.name|escape}-{$block.form.id}"
+						       name="{$field.name|escape}"
+						       {if $field.required}required aria-required="true"{/if}>
+					{/if}
+				</div>
+				{/foreach}
+				<div class="cf-field">
+					<button type="submit" class="btn btn-primary">Send Message</button>
+				</div>
+				<div class="cf-msg" aria-live="polite"></div>
+			</form>
+		</div>
+		{/if}
+
+	{/if}
+	</div>{* /page-block-cell *}
+{/foreach}
+</div>{* /page-blocks-grid *}
+{/if}

@@ -199,8 +199,93 @@ function cc_exception_handler(Throwable $e): void {
 }
 
 // ── Catalog sidebar data ───────────────────────────────────────────────────────
-function load_menu(int $menu_id, string $p): array {
+function load_menu(int $menu_id, string $p, int $product_id = 0): array {
 	if (!$menu_id) return [];
+
+	// Check menu type — some menus are auto-built rather than item-driven
+	$menu = DB::row("SELECT menu_type FROM `{$p}menus` WHERE id=?", [$menu_id]);
+
+	if ($menu && ($menu['menu_type'] ?? '') === 'related_products') {
+		if (!$product_id) return [];
+		$products = DB::rows(
+			"SELECT p.id, p.name, p.slug, p.price, p.list_price,
+			        (SELECT filename FROM `{$p}product_images`
+			         WHERE product_id=p.id ORDER BY display_order ASC LIMIT 1) AS thumbnail
+			 FROM `{$p}product_related` pr
+			 JOIN `{$p}products` p ON p.id = pr.related_product_id
+			 WHERE pr.product_id = ? AND p.status > 0
+			 ORDER BY pr.display_order ASC",
+			[$product_id]
+		);
+		$items = [];
+		foreach ($products as $prod) {
+			$items[] = [
+				'id'            => 0,
+				'menu_id'       => $menu_id,
+				'label'         => $prod['name'],
+				'item_type'     => 'related_product',
+				'slug'          => $prod['slug'],
+				'thumbnail'     => $prod['thumbnail'] ?? '',
+				'price'         => $prod['price'],
+				'list_price'    => $prod['list_price'],
+				'url'           => '',
+				'page_slug'     => null,
+				'category_slug' => null,
+				'category_id'   => null,
+				'submenu_id'    => null,
+				'submenu_items' => [],
+				'show_count'    => 0,
+				'enabled'       => 1,
+				'target'        => '',
+				'js_code'       => '',
+				'settings'      => null,
+			];
+		}
+		return $items;
+	}
+
+	if ($menu && ($menu['menu_type'] ?? '') === 'category_list') {
+		// Get excluded categories from the single config item's settings
+		$config = DB::row("SELECT settings FROM `{$p}menu_items` WHERE menu_id=? LIMIT 1", [$menu_id]);
+		$excluded = [];
+		if ($config && $config['settings']) {
+			$s = json_decode($config['settings'], true);
+			$excluded = $s['excluded_cats'] ?? [];
+		}
+		$cats = DB::rows(
+			"SELECT id, name, slug,
+			 (SELECT COUNT(*) FROM `{$p}categories_products` cp
+			  JOIN `{$p}products` pp ON pp.id=cp.product_id
+			  WHERE cp.category_id=c.id AND pp.status>0) AS product_count
+			 FROM `{$p}categories` c
+			 WHERE status>0
+			 ORDER BY display_order ASC, name ASC"
+		);
+		$items = [];
+		foreach ($cats as $cat) {
+			if (in_array((string)$cat['id'], array_map('strval', $excluded))) continue;
+			$items[] = [
+				'id'              => 0,
+				'menu_id'         => $menu_id,
+				'label'           => $cat['name'],
+				'item_type'       => 'category',
+				'category_slug'   => $cat['slug'],
+				'category_id'     => $cat['id'],
+				'product_count'   => $cat['product_count'],
+				'show_count'      => 1,
+				'enabled'         => 1,
+				'url'             => '',
+				'page_slug'       => null,
+				'submenu_id'      => null,
+				'submenu_items'   => [],
+				'target'          => '',
+				'js_code'         => '',
+				'settings'        => null,
+			];
+		}
+		return $items;
+	}
+
 	$items = DB::rows(
 		"SELECT mi.*, p.slug AS page_slug, c.slug AS category_slug,
 		        c.name AS category_name
@@ -239,7 +324,7 @@ function load_menu(int $menu_id, string $p): array {
 	return $items;
 }
 
-function catalog_sidebar(Smarty $smarty): void {
+function catalog_sidebar(Smarty $smarty, int $product_id = 0): void {
 	$p = DB_PREFIX;
 
 	// Active categories
@@ -267,10 +352,13 @@ function catalog_sidebar(Smarty $smarty): void {
 	$smarty->assign('sidebar_top', $top);
 
 	// Global menus
-	$menu1_row = DB::row("SELECT id FROM `{$p}menus` WHERE menu_role='menu1' LIMIT 1");
-	$menu2_row = DB::row("SELECT id FROM `{$p}menus` WHERE menu_role='menu2' LIMIT 1");
+	$menu1_row = DB::row("SELECT id, menu_type FROM `{$p}menus` WHERE menu_role='menu1' LIMIT 1");
+	$menu2_row = DB::row("SELECT id, menu_type FROM `{$p}menus` WHERE menu_role='menu2' LIMIT 1");
 	$smarty->assign('menu1', $menu1_row ? load_menu((int)$menu1_row['id'], $p) : []);
-	$smarty->assign('menu2', $menu2_row ? load_menu((int)$menu2_row['id'], $p) : []);
+
+	$menu2_type = $menu2_row['menu_type'] ?? '';
+	$smarty->assign('menu2',      $menu2_row ? load_menu((int)$menu2_row['id'], $p, $product_id) : []);
+	$smarty->assign('menu2_type', $menu2_type);
 
 	// Store settings for layout
 	$s = [];
@@ -279,5 +367,4 @@ function catalog_sidebar(Smarty $smarty): void {
 	$smarty->assign('store_phone',    $s['store_phone']    ?? '');
 	$smarty->assign('store_logo_url', $s['store_logo_url'] ?? '');
 	$smarty->assign('cart_subtotal',  Cart::subtotal());
-	$smarty->assign('wl_count',       count(WishList::guestLists()));
 }

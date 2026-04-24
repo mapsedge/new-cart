@@ -133,11 +133,16 @@ if (empty($payment_methods)) {
 	$payment_methods = [['id' => 'cod', 'label' => 'Pay on Delivery', 'icon' => '']];
 }
 
+$checkout_page = DB::row("SELECT * FROM `{$p}pages` WHERE slug='checkout'");
+$blocks        = $checkout_page ? hydrate_page_blocks($checkout_page['id'], $p, $smarty) : [];
+
 catalog_sidebar($smarty);
-$smarty->assign('items',           $items);
+$smarty->assign('items',           Cart::get());
 $smarty->assign('subtotal',        money(Cart::subtotal()));
 $smarty->assign('subtotal_raw',    Cart::subtotal());
 $smarty->assign('payment_methods', $payment_methods);
 $smarty->assign('stripe_key',      $stripe_key);
+$smarty->assign('page',            $checkout_page ?: []);
+$smarty->assign('blocks',          $blocks);
 $smarty->assign('page_type',       'checkout');
 $smarty->display('checkout.html');

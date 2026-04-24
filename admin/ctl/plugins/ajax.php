@@ -25,12 +25,20 @@ if ($action === 'list') {
 		out(true, '', ['plugins' => []]);
 	}
 
+	$seen = [];
 	foreach (scandir($plugin_dir) as $entry) {
 		if ($entry === '.' || $entry === '..') continue;
 		$disabled = $entry[0] === '.';
 		$code     = $disabled ? substr($entry, 1) : $entry;
 		$path     = $plugin_dir . $entry;
 		if (!is_dir($path)) continue;
+
+		// If both enabled and disabled copies exist, skip the disabled one
+		if ($disabled && is_dir($plugin_dir . $code)) continue;
+
+		// Skip duplicate codes (shouldn't happen, but guard against it)
+		if (isset($seen[$code])) continue;
+		$seen[$code] = true;
 
 		$manifest = PluginLoader::readManifest($path . '/plugin.xml');
 		if (!$manifest) continue;
@@ -46,6 +54,7 @@ if ($action === 'list') {
 			'description'  => $manifest['description'] ?: '',
 			'date'         => $manifest['date']        ?: '',
 			'has_settings' => !empty($manifest['settings']),
+			'has_admin'    => file_exists($plugin_dir . $code . '/admin/index.php'),
 		];
 	}
 
@@ -174,23 +183,23 @@ if ($action === 'remove') {
 	$code     = preg_replace('/[^a-z0-9_\-]/i', '', post('code'));
 	$path     = DIR_ROOT . 'plugins/'  . $code;
 	$disabled = DIR_ROOT . 'plugins/.' . $code;
-	$actual   = is_dir($path) ? $path : (is_dir($disabled) ? $disabled : null);
+	$primary  = is_dir($path) ? $path : (is_dir($disabled) ? $disabled : null);
 
-	if (!$actual) out(false, 'Plugin not found.');
+	if (!$primary) out(false, 'Plugin not found.');
 
-	// Read manifest for table cleanup
-	$manifest = PluginLoader::readManifest($actual . '/plugin.xml');
-	if ($manifest) {
-		PluginLoader::dropTables($manifest);
-	}
+	// Read manifest and run cleanup from the primary (enabled) copy
+	$manifest = PluginLoader::readManifest($primary . '/plugin.xml');
+	if ($manifest) PluginLoader::dropTables($manifest);
 
-	// Run uninstall.php if present
-	$uninstall = $actual . '/uninstall.php';
+	$uninstall = $primary . '/uninstall.php';
 	if (file_exists($uninstall)) {
 		try { require $uninstall; } catch (Exception $e) { /* non-fatal */ }
 	}
 
-	self_rmdir($actual);
+	// Remove both enabled and disabled copies so no orphan remains
+	if (is_dir($path))     self_rmdir($path);
+	if (is_dir($disabled)) self_rmdir($disabled);
+
 	out(true, 'Plugin removed.');
 }
 

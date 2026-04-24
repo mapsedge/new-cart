@@ -50,6 +50,7 @@ if ($action === 'save_all') {
 		'img_retain_names', 'img_resize_on_upload', 'img_orig_max',
 		'img_admin_size', 'img_admin_quality', 'img_fm_size', 'img_fm_quality',
 		'img_product_width', 'img_product_quality',
+		'img_cart_size', 'img_related_size', 'related_max_items',
 		'seo_title_default', 'seo_description_default', 'seo_keywords_default',
 		// Local
 		'address', 'phone', 'timezone', 'date_format', 'currency_position',
@@ -58,9 +59,10 @@ if ($action === 'save_all') {
 		// Server
 		'maintenance_mode', 'use_seo_urls',
 		'pw_min_length', 'pw_require_upper', 'pw_require_number', 'pw_require_symbol',
-		'display_errors', 'log_errors',
+		'display_errors', 'log_errors', 'smarty_debug',
 		// Options — Images
 		'img_orig_max', 'img_admin_size', 'img_admin_quality', 'img_fm_size', 'img_fm_quality',
+		'img_related_size', 'related_max_items',
 		// Options — AI
 		'deepai_key',
 		// Stripe
@@ -73,7 +75,6 @@ if ($action === 'save_all') {
 		'shippo_from_state', 'shippo_from_zip', 'shippo_from_country',
 		'shippo_parcel_length', 'shippo_parcel_width', 'shippo_parcel_height',
 		'shippo_parcel_distance_unit', 'shippo_parcel_weight', 'shippo_parcel_mass_unit',
-		'wishlist_guest_days',
 	];
 
 	foreach ($all_fields as $key) {

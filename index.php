@@ -15,8 +15,9 @@ require __DIR__ . '/cfg/config.php';
 // ── Core libs ──────────────────────────────────────────────────────────────────
 require DIR_LIB . 'db.php';
 require DIR_LIB . 'functions.php';
+require DIR_LIB . 'hook.php';
+require DIR_LIB . 'page_block_helper.php';
 require DIR_LIB . 'cart.php';
-require DIR_LIB . 'wishlist.php';
 
 // ── Error handlers ─────────────────────────────────────────────────────────────
 ini_set('display_errors', 1);
@@ -42,10 +43,21 @@ $smarty->setCompileDir(DIR_CACHE . 'tpl/');
 $smarty->setCacheDir(DIR_CACHE . 'smarty/');
 $smarty->force_compile = SMARTY_FORCE_COMPILE;
 $smarty->caching       = SMARTY_CACHING;
+$smarty->registerClass('Smarty', 'Smarty');
 
 // ── Global template vars ───────────────────────────────────────────────────────
-$smarty->assign('site_name',     SITE_NAME);
-$smarty->assign('site_currency', SITE_CURRENCY);
+// Read live values from settings table; fall back to install-time constants
+$_nc_site_settings = [];
+try {
+	$_nc_site_rows = DB::rows("SELECT `key`, `value` FROM `" . DB_PREFIX . "settings` WHERE `key` IN ('site_name','site_currency','img_cart_size','smarty_debug')");
+	foreach ($_nc_site_rows as $_r) $_nc_site_settings[$_r['key']] = $_r['value'];
+} catch (Exception $e) {}
+
+$smarty->debugging = !empty($_nc_site_settings['smarty_debug']);
+
+$smarty->assign('site_name',     $_nc_site_settings['site_name']     ?? SITE_NAME);
+$smarty->assign('site_currency', $_nc_site_settings['site_currency'] ?? SITE_CURRENCY);
+$smarty->assign('img_cart_size', max(40, (int)($_nc_site_settings['img_cart_size'] ?? 100)));
 $smarty->assign('url_root',      URL_ROOT);
 $smarty->assign('url_admin',     URL_ADMIN);
 $smarty->assign('url_img',       URL_IMG);
@@ -71,9 +83,6 @@ if ($uri_parts[0] === 'category' && !empty($uri_parts[1])) {
 	$_GET['route'] = 'checkout';
 } elseif ($uri_parts[0] === 'order-complete') {
 	$_GET['route'] = 'order-complete';
-} elseif ($uri_parts[0] === 'wishlist') {
-	$_GET['route'] = 'wishlist';
-	if (!empty($uri_parts[1])) $_GET['slug'] = $uri_parts[1];
 } elseif ($uri_parts[0] === 'page' && !empty($uri_parts[1])) {
 	$_GET['route'] = 'page';
 	$_GET['slug']  = $uri_parts[1];

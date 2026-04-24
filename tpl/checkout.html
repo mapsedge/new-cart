@@ -9,7 +9,21 @@
 {/block}
 
 {block name="content"}
+{if $page.title && $page.title !== 'Checkout'}
+<div class="page-head">
+	<h1>{$page.title|escape}</h1>
+</div>
+{else}
 <div class="page-head"><h1>Checkout</h1></div>
+{/if}
+
+{if $blocks}
+<div class="page-blocks-grid">
+{foreach $blocks as $block}
+	<div class="page-block-cell{if $block.is_core} block-cell-core{/if}"
+	     style="grid-column:{$block.grid_col_start}/span {$block.grid_col_span};grid-row:{$block.grid_row}{if $block.grid_row_span > 1}/span {$block.grid_row_span}{/if};">
+
+	{if $block.block_type === 'checkout_form'}
 
 <div class="checkout-layout">
 
@@ -138,18 +152,64 @@
 	</div>
 
 </div>
+
+	{* ── Additional blocks (menu, products, etc.) ── *}
+	{elseif $block.block_type === 'menu'}
+		{if isset($block.menu_items) && $block.menu_items}
+		<nav class="page-block block-menu">
+			{foreach $block.menu_items as $item}
+			{if $item.enabled}
+			<a href="{if $item.item_type === 'category' && $item.category_slug}{$url_root}category/{$item.category_slug|escape}{elseif $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}{else}{$item.url|default:'#'|escape}{/if}" class="block-menu-link">
+				{$item.label|escape}
+				{if $item.show_count && isset($item.product_count)}<span class="block-menu-count">({$item.product_count})</span>{/if}
+			</a>
+			{/if}
+			{/foreach}
+		</nav>
+		{/if}
+	{elseif $block.block_type === 'rich_text'}
+		<div class="page-block block-rich-text">{$block.settings.content|default:''}</div>
+	{elseif $block.block_type === 'html'}
+		<div class="page-block block-html">{$block.settings.html|default:''}</div>
+	{elseif in_array($block.block_type, ['featured_products','best_sellers','new_arrivals'])}
+		{if isset($block.products) && $block.products}
+		<div class="page-block block-products">
+			{if $block.heading}<h2 class="block-heading">{$block.heading|escape}</h2>{/if}
+			<div class="product-grid">
+				{foreach $block.products as $prod}
+				<a class="product-card" href="{$url_root}product/{$prod.slug|escape}">
+					<div class="product-card-img">
+						{if $prod.image}<img src="{$prod.image|escape}" alt="{$prod.name|escape}" loading="lazy">
+						{else}<div class="product-card-no-image" aria-hidden="true">&#128247;</div>{/if}
+					</div>
+					<div class="product-card-body">
+						<div class="product-card-name">{$prod.name|escape}</div>
+						<div class="product-card-price">
+							{if $prod.list_price && $prod.list_price > $prod.price}<span class="product-card-list-price">{$site_currency}{$prod.list_price|string_format:"%.2f"}</span>{/if}
+							{$site_currency}{$prod.price|string_format:"%.2f"}
+						</div>
+					</div>
+				</a>
+				{/foreach}
+			</div>
+		</div>
+		{/if}
+	{/if}
+
+	</div>
+{/foreach}
+</div>
+{/if}
 {/block}
 
 {block name="scripts"}
 <script>
-{literal}
 var STRIPE_PUBLISHABLE_KEY = '{$stripe_key|escape}';
 var CART_CURRENCY          = '{$site_currency_code|default:"usd"|escape}';
 var CART_SUBTOTAL          = {$subtotal_raw|floatval};
-var CART_AMOUNT_CENTS      = 0; // set after shipping selected
+var CART_AMOUNT_CENTS      = 0;
 var ORDER_ID               = 0;
 var THANKYOU_URL           = '{$url_root}order-complete';
-{/literal}
 </script>
 {if $stripe_key}
 <script src="{$url_root}plugins/stripe/catalog/stripe-checkout.js"></script>

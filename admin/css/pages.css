@@ -39,6 +39,17 @@
 .badge-active { background: #d1fae5; color: #065f46; padding: .15rem .5rem; border-radius: 99px; font-size: .78rem; font-weight: 700; }
 .badge-inactive { background: #f3f4f6; color: var(--nc-text-dim); padding: .15rem .5rem; border-radius: 99px; font-size: .78rem; }
 
+/* System page badge */
+.badge-system {
+	background: #fef9c3;
+	color: #854d0e;
+	padding: .15rem .5rem;
+	border-radius: 99px;
+	font-size: .78rem;
+	font-weight: 700;
+	cursor: default;
+}
+
 /* Status badge: with-link */
 .badge-link {
 	background: #dbeafe;
@@ -93,4 +104,19 @@
 	outline: none;
 	border-color: var(--nc-primary);
 	box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+
+/* ── Pages list section headers ── */
+#pages-tbody tr.pages-section-head td {
+	padding: .55rem .85rem .3rem;
+	font-size: .68rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	color: var(--nc-text-dim);
+	background: var(--nc-bg-page, #f0f2f5);
+	border-bottom: 1px solid var(--nc-border);
+}
+#pages-tbody tr.pages-section-head:first-child td {
+	border-top: none;
 }

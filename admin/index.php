@@ -41,6 +41,8 @@ Hook::fire('admin.bootstrap.before');
 require DIR_LIB . 'vendor/smarty/smarty/libs/Smarty.class.php';
 
 $smarty = new Smarty();
+$smarty->registerClass('Smarty', 'Smarty');
+$smarty->debugging = !empty($_nc_settings['smarty_debug']);
 
 // Plugin template dirs take priority over default
 $tpl_dirs = array_merge(
@@ -71,6 +73,10 @@ $smarty->assign('admin_avatar',$_SESSION['admin_avatar']   ?? '');
 $smarty->assign('access',      (int)($_SESSION['admin_access'] ?? 0));
 $smarty->assign('reminders',   reminder_list());
 
+// ── Partial request detection ──────────────────────────────────────────────────
+$is_partial = (isset($_SERVER['HTTP_X_NC_PARTIAL']) && $_SERVER['HTTP_X_NC_PARTIAL'] === '1');
+$smarty->assign('nc_partial', $is_partial);
+
 // ── Route ──────────────────────────────────────────────────────────────────────
 $route = preg_replace('/[^a-z0-9_\/\-]/', '', strtolower(get('route', 'dashboard')));
 
@@ -88,9 +94,9 @@ if (!file_exists($ctl_file)) {
 }
 
 if (!file_exists($ctl_file)) {
-	// Try plugin admin routes: "goshippo/label" → plugins/.goshippo/admin/label.php
+	// Try plugin admin routes: "lipsum" → plugins/lipsum/admin/index.php
 	$parts      = explode('/', $route, 2);
-	$plugin_ctl = DIR_ROOT . 'plugins/.' . ($parts[0] ?? '') . '/admin/' . ($parts[1] ?? 'index') . '.php';
+	$plugin_ctl = DIR_ROOT . 'plugins/' . ($parts[0] ?? '') . '/admin/' . ($parts[1] ?? 'index') . '.php';
 	if (file_exists($plugin_ctl)) {
 		$ctl_file = $plugin_ctl;
 	} else {

@@ -165,12 +165,12 @@
 .avatar-upload-hint { font-size: .78rem; color: var(--nc-text-dim); line-height: 1.5; }
 
 /* ── Image upload (logo/favicon) ── */
-.img-upload-row { display: flex; align-items: center; gap: 1rem; margin-bottom: .9rem; flex-wrap: wrap; }
+.img-upload-row { align-items: center; gap: 1rem; margin-bottom: .9rem; flex-wrap: wrap; }
 .img-preview {
 	height: 48px; max-width: 160px;
-	border-radius: var(--nc-radius);
-	border: 1px solid var(--nc-border); object-fit: contain;
 	background: var(--nc-bg-alt); display: none;
+	box-shadow: var(--nc_box_shadow);
+	margin-top: 1rem;
 }
 .img-preview.show { display: block; }
 .img-upload-btn {

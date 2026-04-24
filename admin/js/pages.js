@@ -35,72 +35,97 @@ async function loadPages() {
 	renderList(res.rows || []);
 }
 
+const CORE_TYPES = ['home', 'account', 'cart', 'checkout', 'product'];
+
+function makePageRow(r) {
+	const isCore = CORE_TYPES.includes(r.page_type);
+	const tr = document.createElement('tr');
+	tr.dataset.id = r.id;
+	tr.innerHTML =
+		'<td>' + (!isCore ? '<span class="drag-handle" draggable="true" aria-hidden="true">⠿</span>' : '') + '</td>' +
+		'<td><a class="nc-table-link" href="' + NC.adminUrl + '?route=page-edit&id=' + r.id + '">' + esc(r.title) + '</a></td>' +
+		'<td><code>' + esc(r.slug) + '</code></td>' +
+		'<td>' + (['<span class="badge-inactive">Draft</span>','<span class="badge-active">Public</span>','<span class="badge-link">With Link</span>'][r.status] || '<span class="badge-inactive">Draft</span>') + '</td>' +
+		'<td>' + (isCore
+			? '<span class="badge-system" title="System page — cannot be deleted">&#128274;</span>'
+			: '<delete-in-place caption="🗑" confirm="Delete page?" data-id="' + r.id + '"></delete-in-place>') + '</td>';
+	return tr;
+}
+
+function makeSectionRow(label) {
+	const tr = document.createElement('tr');
+	tr.className = 'pages-section-head';
+	tr.innerHTML = '<td colspan="5">' + label + '</td>';
+	return tr;
+}
+
 function renderList(rows) {
 	tbody.innerHTML = '';
-	if (!rows.length) {
-		emptyMsg.style.display = '';
-		table.style.display    = 'none';
-		return;
-	}
 	emptyMsg.style.display = 'none';
 	table.style.display    = '';
 
-	rows.forEach(r => {
-		const tr = document.createElement('tr');
-		tr.dataset.id = r.id;
-		tr.innerHTML =
-			'<td><span class="drag-handle" draggable="true" aria-hidden="true">⠿</span></td>' +
-			'<td><button class="btn-page-name" data-id="' + r.id + '">' + esc(r.title) + '</button></td>' +
-			'<td><code>' + esc(r.slug) + '</code></td>' +
-			'<td>' + (['<span class="badge-inactive">Draft</span>','<span class="badge-active">Public</span>','<span class="badge-link">With Link</span>'][r.status] || '<span class="badge-inactive">Draft</span>') + '</td>' +
-			'<td><delete-in-place caption="🗑" confirm="Delete page?" data-id="' + r.id + '"></delete-in-place></td>';
-		tbody.appendChild(tr);
-	});
+	const core = rows.filter(r => CORE_TYPES.includes(r.page_type))
+	                 .sort((a, b) => a.title.localeCompare(b.title));
+	const site = rows.filter(r => !CORE_TYPES.includes(r.page_type))
+	                 .sort((a, b) => a.title.localeCompare(b.title));
 
-	// Name buttons navigate to full-screen editor
-	tbody.querySelectorAll('.btn-page-name').forEach(btn => {
-		btn.addEventListener('click', () => {
-			window.location.href = NC.adminUrl + '?route=page-edit&id=' + btn.dataset.id;
-		});
-	});
+	tbody.appendChild(makeSectionRow('Core'));
+	core.forEach(r => tbody.appendChild(makePageRow(r)));
+	if (!core.length) {
+		const empty = document.createElement('tr');
+		empty.innerHTML = '<td colspan="5" style="color:var(--nc-text-dim);font-size:.85rem;padding:.5rem .85rem">No core pages found.</td>';
+		tbody.appendChild(empty);
+	}
 
-	// dip-confirm
-	tbody.addEventListener('dip-confirm', async function(e) {
-		const id = e.target.dataset.id;
-		const tr = e.target.closest('tr');
-		if (tr) { tr.style.transition='opacity .3s'; tr.style.opacity='0'; }
-		const res = await ajax({ action:'delete', id });
-		if (!res.ok) { if (tr) tr.style.opacity='1'; notifyErr(res.message); return; }
-		setTimeout(() => { tr?.remove(); if (!tbody.children.length) loadPages(); }, 320);
-	});
-
-	// Drag reorder
-	bindRowDrag(tbody);
+	tbody.appendChild(makeSectionRow('Your Site'));
+	site.forEach(r => tbody.appendChild(makePageRow(r)));
+	if (!site.length) {
+		const empty = document.createElement('tr');
+		empty.innerHTML = '<td colspan="5"><div class="nc-empty" style="padding:1.2rem">No pages yet. Click + Add Page to create one.</div></td>';
+		tbody.appendChild(empty);
+	}
 }
 
-function bindRowDrag(tbody) {
-	tbody.addEventListener('dragstart', e => {
-		dragSrc = e.target.closest('tr');
-		if (dragSrc) e.dataTransfer.effectAllowed = 'move';
+// ── dip-confirm — bound once, delegates to any tr[data-id] ────────────────────
+tbody.addEventListener('dip-confirm', async function(e) {
+	const id = e.target.dataset.id;
+	const tr = e.target.closest('tr[data-id]');
+	if (!id) return;
+	if (tr) { tr.style.transition = 'opacity .3s'; tr.style.opacity = '0'; }
+	const res = await ajax({ action:'delete', id });
+	if (!res.ok) { if (tr) tr.style.opacity = '1'; notifyErr(res.message); return; }
+	setTimeout(() => { tr?.remove(); }, 320);
+});
+
+// ── Drag reorder — bound once on tbody ────────────────────────────────────────
+tbody.addEventListener('dragstart', e => {
+	const tr = e.target.closest('tr[data-id]');
+	if (!tr) return;
+	dragSrc = tr;
+	e.dataTransfer.effectAllowed = 'move';
+});
+tbody.addEventListener('dragover', e => {
+	e.preventDefault();
+	const target = e.target.closest('tr[data-id]');
+	document.querySelectorAll('#pages-tbody tr.drag-over').forEach(r => {
+		if (r !== target) r.classList.remove('drag-over');
 	});
-	tbody.addEventListener('dragover', e => {
-		e.preventDefault();
-		const target = e.target.closest('tr');
-		if (target && target !== dragSrc) target.classList.add('drag-over');
-	});
-	tbody.addEventListener('dragleave', e => {
-		e.target.closest('tr')?.classList.remove('drag-over');
-	});
-	tbody.addEventListener('drop', async e => {
-		e.preventDefault();
-		const target = e.target.closest('tr');
-		if (!target || target === dragSrc) return;
-		target.classList.remove('drag-over');
-		tbody.insertBefore(dragSrc, target);
-		const ids = [...tbody.querySelectorAll('tr')].map(r => r.dataset.id);
-		await ajax({ action:'reorder', ids: JSON.stringify(ids) });
-	});
-}
+	if (target && target !== dragSrc) target.classList.add('drag-over');
+});
+tbody.addEventListener('dragleave', e => {
+	if (!e.relatedTarget || !e.relatedTarget.closest('#pages-tbody')) {
+		document.querySelectorAll('#pages-tbody tr.drag-over').forEach(r => r.classList.remove('drag-over'));
+	}
+});
+tbody.addEventListener('drop', async e => {
+	e.preventDefault();
+	const target = e.target.closest('tr[data-id]');
+	if (!target || !dragSrc || target === dragSrc) return;
+	target.classList.remove('drag-over');
+	tbody.insertBefore(dragSrc, target);
+	const ids = [...tbody.querySelectorAll('tr[data-id]')].map(r => r.dataset.id);
+	await ajax({ action:'reorder', ids: JSON.stringify(ids) });
+});
 
 // ── Drawer ─────────────────────────────────────────────────────────────────────
 async function openDrawer(id) {
@@ -169,7 +194,10 @@ const BLOCK_LABELS = {
 	rich_text: 'Rich Text', html: 'Custom HTML',
 	featured_products: 'Featured Products', best_sellers: 'Best Sellers',
 	best_sellers_category: 'Best Sellers by Category', new_arrivals: 'New Arrivals',
+	related_products: 'Related Products',
 	slideshow: 'Slideshow', contact_form: 'Contact Form', sitemap: 'Site Map',
+	menu: 'Menu',
+	cart_contents: 'Cart Contents', checkout_form: 'Checkout Form', product_view: 'Product View',
 };
 
 function renderBlocks() {
@@ -255,12 +283,13 @@ function buildBlockCard(b, idx) {
 
 	const label = BLOCK_LABELS[b.block_type] || b.block_type;
 
+	const isCore = !!(b.settings && b.settings.is_core);
 	card.innerHTML =
 		'<div class="block-card-head">' +
 			'<span class="drag-handle" aria-hidden="true">⠿</span>' +
 			'<span class="block-label">' + esc(label) + '</span>' +
 			'<ios-toggle size="sm" ' + (b.enabled ? 'checked' : '') + ' aria-label="Enable block"></ios-toggle>' +
-			'<delete-in-place caption="🗑" confirm="Remove block?" data-idx="' + idx + '"></delete-in-place>' +
+			(!isCore ? '<delete-in-place caption="🗑" confirm="Remove block?" data-idx="' + idx + '"></delete-in-place>' : '') +
 		'</div>' +
 		'<div class="block-card-settings" id="block-settings-' + idx + '"></div>';
 
@@ -271,16 +300,19 @@ function buildBlockCard(b, idx) {
 		if (b.id) await ajax({ action:'save_block', id:b.id, page_id:document.getElementById('page-id').value, block_type:b.block_type, settings:JSON.stringify(b.settings||{}), enabled:b.enabled });
 	});
 
-	// dip-confirm
-	card.querySelector('delete-in-place').addEventListener('dip-confirm', async function() {
-		card.style.transition = 'opacity .3s';
-		card.style.opacity    = '0';
-		if (b.id) await ajax({ action:'delete_block', id:b.id });
-		setTimeout(() => {
-			currentBlocks.splice(idx, 1);
-			renderBlocks();
-		}, 320);
-	});
+	// dip-confirm (not present for core blocks)
+	const dipEl = card.querySelector('delete-in-place');
+	if (dipEl) {
+		dipEl.addEventListener('dip-confirm', async function() {
+			card.style.transition = 'opacity .3s';
+			card.style.opacity    = '0';
+			if (b.id) await ajax({ action:'delete_block', id:b.id });
+			setTimeout(() => {
+				currentBlocks.splice(idx, 1);
+				renderBlocks();
+			}, 320);
+		});
+	}
 
 	// Render settings fields
 	renderBlockSettings(b, idx, card.querySelector('.block-card-settings'));
@@ -326,13 +358,32 @@ function renderBlockSettings(b, idx, container) {
 			html = '<div class="block-field"><label>Count</label><input type="number" class="block-in" data-key="count" value="' + (s.count||6) + '" min="1" max="24"></div>' +
 			       '<div class="block-field"><label>Heading</label><input type="text" class="block-in" data-key="heading" value="' + esc(s.heading||'') + '"></div>';
 			break;
+		case 'related_products':
+			html = '<div class="block-field"><label>Heading</label><input type="text" class="block-in" data-key="heading" value="' + esc(s.heading||'Related Products') + '"></div>' +
+			       '<div class="block-field"><label>Max items</label><input type="number" class="block-in" data-key="max_items" value="' + (s.max_items||0) + '" min="0" max="24"></div>' +
+			       '<div class="block-field"><p style="font-size:.8rem;color:var(--nc-text-dim);margin:0">Shows this product\'s related items on the product page. Empty on other pages.</p></div>';
+			break;
 		case 'best_sellers_category':
 			html = '<div class="block-field"><label>Category</label><select class="block-sel" data-key="category_id"><option value="">— loading —</option></select></div>' +
 			       '<div class="block-field"><label>Count</label><input type="number" class="block-in" data-key="count" value="' + (s.count||6) + '" min="1" max="24"></div>' +
 			       '<div class="block-field"><label>Heading</label><input type="text" class="block-in" data-key="heading" value="' + esc(s.heading||'') + '"></div>';
 			break;
+		case 'menu':
+			html = '<div class="block-field"><label>Menu</label><select class="block-sel" data-key="menu_id"><option value="">— loading —</option></select></div>' +
+			       '<div class="block-field"><label>Max items</label><input type="number" class="block-in" data-key="max_items" value="' + (s.max_items||0) + '" min="0" max="100" aria-label="Max items (0 = show all)"></div>' +
+			       '<span class="hint" style="display:block;margin-top:-.25rem">0 shows all items.</span>';
+			break;
 		case 'contact_form':
 			html = '<div class="block-field"><label>Form</label><select class="block-sel" data-key="form_id"><option value="">— loading —</option></select></div>';
+			break;
+		case 'cart_contents':
+			html = '<div class="block-field"><p style="font-size:.82rem;color:var(--nc-text-dim);margin:0">Core block — renders the shopping cart contents and totals.</p></div>';
+			break;
+		case 'checkout_form':
+			html = '<div class="block-field"><p style="font-size:.82rem;color:var(--nc-text-dim);margin:0">Core block — renders the checkout form and payment step.</p></div>';
+			break;
+		case 'product_view':
+			html = '<div class="block-field"><p style="font-size:.82rem;color:var(--nc-text-dim);margin:0">Core block — renders the product gallery, details, options, and add-to-cart. Blocks added above appear before this; blocks below appear after.</p></div>';
 			break;
 		case 'sitemap':
 			html = '<div class="block-field">' +
@@ -353,14 +404,14 @@ function renderBlockSettings(b, idx, container) {
 	container.innerHTML = html;
 
 	// Load dynamic selects
-	if (['slideshow','best_sellers_category','contact_form'].includes(b.block_type)) {
+	if (['slideshow','best_sellers_category','contact_form','menu'].includes(b.block_type)) {
 		ajax({ action:'block_data', type:b.block_type }).then(res => {
 			if (!res.ok) return;
 			const d = res.data;
-			const sel = container.querySelector('[data-key="slideshow_id"],[data-key="category_id"],[data-key="form_id"]');
+			const sel = container.querySelector('[data-key="slideshow_id"],[data-key="category_id"],[data-key="form_id"],[data-key="menu_id"]');
 			if (!sel) return;
 			const key = sel.dataset.key;
-			const items = d.slideshows || d.categories || d.forms || [];
+			const items = d.slideshows || d.categories || d.forms || d.menus || [];
 			sel.innerHTML = '<option value="">— Select —</option>' +
 				items.map(i => '<option value="' + i.id + '"' + (s[key] == i.id ? ' selected':'') + '>' + esc(i.name) + '</option>').join('');
 		});

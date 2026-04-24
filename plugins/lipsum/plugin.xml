@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+    <code>lipsum</code>
+    <name>Lorem Ipsum</name>
+    <version>1.0</version>
+    <author>Map's Edge Creative</author>
+    <description>Adds a Lorem Ipsum button to the rich text editor.</description>
+    <settings>
+        <key>lipsum_text</key>
+    </settings>
+</plugin>

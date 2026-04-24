@@ -34,9 +34,6 @@
 			{else}
 			<a href="{$url_root}?route=login">My Account</a>
 			{/if}
-			<a href="{$url_root}wishlist">Wish List
-				{if $wl_count > 0}<span class="utility-badge">{$wl_count}</span>{/if}
-			</a>
 		</div>
 	</div>
 </div>
@@ -120,15 +117,31 @@
 {/if}
 
 {* ── Page body ───────────────────────────────────────────────────────────── *}
+{* #page-body is a 4-column grid: col 1 = sidebar/block-col-1, cols 2-4 = content.
+   On pages with blocks, the block grid spans all 4 columns and the sidebar nav is suppressed. *}
 <div id="page-body">
 
-	{* Menu 2 — sidebar *}
-	{if isset($menu2) && $menu2}
+	{* Menu 2 — sidebar navigation (suppressed on block/cart pages that own col 1) *}
+	{if isset($menu2) && $menu2 && (!isset($blocks) || !$blocks) && (!isset($cart_blocks) || !$cart_blocks)}
 	<button id="sidebar-toggle" aria-expanded="false" aria-controls="sidebar-menu2">
-		&#9776; Browse
+		{if isset($menu2_type) && $menu2_type === 'related_products'}&#128279; Related{else}&#9776; Browse{/if}
 	</button>
-	<nav id="sidebar-menu2" aria-label="Browse navigation">
+	<nav id="sidebar-menu2" aria-label="{if isset($menu2_type) && $menu2_type === 'related_products'}Related products{else}Browse navigation{/if}">
 		<div class="sidebar-inner">
+			{if isset($menu2_type) && $menu2_type === 'related_products'}
+			<div class="related-menu-heading">Related Products</div>
+			{foreach $menu2 as $item}
+			<a href="{$url_root}product/{$item.slug|escape}" class="related-menu-item">
+				<div class="related-menu-thumb">
+					{if $item.thumbnail}<img src="{$item.thumbnail|escape}" alt="{$item.label|escape}" loading="lazy">{/if}
+				</div>
+				<div class="related-menu-info">
+					<div class="related-menu-name">{$item.label|escape}</div>
+					<div class="related-menu-price">{$site_currency}{$item.price|string_format:"%.2f"}</div>
+				</div>
+			</a>
+			{/foreach}
+			{else}
 			{foreach $menu2 as $item}
 			{if $item.enabled}
 			<a href="{if $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}
@@ -143,6 +156,7 @@
 			</a>
 			{/if}
 			{/foreach}
+			{/if}
 		</div>
 	</nav>
 	{/if}
@@ -191,6 +205,7 @@
 
 {* ── Scripts ─────────────────────────────────────────────────────────────── *}
 <script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
+<script src="/js/vendor/jquery.min.js"></script>
 <script src="/js/vendor/ios-toggle.js"></script>
 <script src="/js/vendor/delete-in-place.js"></script>
 <script src="/js/vendor/debounce-button.js"></script>
@@ -254,6 +269,20 @@ document.addEventListener('click', function(e) {
 	}
 });
 {/literal}
+</script>
+<script>
+window.updateCartLabel = function(count, subtotal) {
+	var label = document.querySelector('.cart-label');
+	var currency = '{$site_currency}';
+	if (!label) return;
+	if (count > 0) {
+		label.innerHTML = 'Cart: <span class="cart-count">' + count + ' item' + (count !== 1 ? 's' : '') + '</span> &mdash; ' + currency + parseFloat(subtotal).toFixed(2);
+	} else {
+		label.innerHTML = '0 Items &mdash; ' + currency + '0.00';
+	}
+	var link = document.getElementById('store-cart');
+	if (link) link.setAttribute('aria-label', count > 0 ? 'Cart, ' + count + ' item(s)' : 'Cart');
+};
 </script>
 {block name="scripts"}{/block}
 </body>
