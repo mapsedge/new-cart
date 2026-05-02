@@ -932,7 +932,7 @@
 
 	async function loadProductOptions(productId) {
 		if (!poList) return;
-		const res = await ajax({ action: 'list_options', product_id: productId });
+		const res = await post({ action: 'list_options', product_id: productId });
 		if (!res.ok) return;
 		poList.innerHTML = '';
 		(res.product_options || []).forEach(po => poList.appendChild(buildPoCard(po)));
@@ -971,7 +971,7 @@
 		reqWrap.innerHTML = '<ios-toggle size="sm" ' + (po.required ? 'checked' : '') + ' aria-label="Required"></ios-toggle><span>Required</span>';
 		reqWrap.querySelector('ios-toggle')?.addEventListener('ios-toggle', async function (e) {
 			e.stopPropagation();
-			await ajax({ action: 'save_option', po_id: po.id, label: po.label || '', required: e.detail.checked ? 1 : 0 });
+			await post({ action: 'save_option', po_id: po.id, label: po.label || '', required: e.detail.checked ? 1 : 0 });
 		});
 
 		// Remove (delete-in-place)
@@ -982,7 +982,7 @@
 		dip.addEventListener('dip-confirm', async function () {
 			card.style.transition = 'opacity .3s';
 			card.style.opacity = '0';
-			const res = await ajax({ action: 'remove_option', po_id: po.id });
+			const res = await post({ action: 'remove_option', po_id: po.id });
 			if (!res.ok) { card.style.opacity = '1'; notifyErr(res.message); return; }
 			setTimeout(() => card.remove(), 320);
 		});
@@ -1009,7 +1009,7 @@
 		async function saveLabel() {
 			po.label = labelInput.value.trim();
 			nameEl.textContent = po.label || po.option_name;
-			await ajax({ action: 'save_option', po_id: po.id, label: po.label, required: po.required || 0 });
+			await post({ action: 'save_option', po_id: po.id, label: po.label, required: po.required || 0 });
 		}
 		labelInput.addEventListener('blur', saveLabel);
 		labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveLabel(); } });
@@ -1083,7 +1083,7 @@
 		stockIn.setAttribute('aria-label', 'Stock for ' + v.value_text);
 
 		async function savePov() {
-			await ajax({
+			await post({
 				action:          'save_option_value',
 				pov_id:          v.id,
 				label:           labelIn.value.trim(),
@@ -1123,7 +1123,7 @@
 	let acTimer = null;
 
 	async function showOptions(q) {
-		const res = await ajax({ action: 'search_options', q: q || '' });
+		const res = await post({ action: 'search_options', q: q || '' });
 		if (!res.ok) return;
 		optSearchResults.innerHTML = '';
 		if (!res.rows.length) { optSearchResults.style.display = 'none'; return; }
@@ -1137,7 +1137,7 @@
 				optSearchInput.value = '';
 				const productId = document.getElementById('prod-id')?.value;
 				if (!productId) return;
-				const addRes = await ajax({ action: 'add_option', product_id: productId, option_id: r.id });
+				const addRes = await post({ action: 'add_option', product_id: productId, option_id: r.id });
 				if (!addRes.ok) { notifyErr(addRes.message); return; }
 				poList.appendChild(buildPoCard(addRes.product_option));
 			});

@@ -126,33 +126,4 @@
 .col-settings { width: 110px; white-space: nowrap; }
 .plugin-settings-btn { font-size: .8rem; }
 
-/* ── Settings drawer ── */
-#plugin-settings-overlay {
-	display: none;
-	position: fixed; inset: 0; z-index: 499;
-	background: rgba(0,0,0,.45);
-}
-.plugin-drawer {
-	position: fixed; top: 0; right: 0; bottom: 0;
-	width: 480px; max-width: 92vw;
-	background: var(--nc-bg);
-	box-shadow: -4px 0 28px rgba(0,0,0,.18);
-	z-index: 500;
-	display: flex; flex-direction: column;
-	transform: translateX(100%);
-	transition: transform .28s ease;
-}
-.plugin-drawer.open { transform: translateX(0); }
-.plugin-drawer-head {
-	display: flex; align-items: center; justify-content: space-between;
-	padding: .85rem 1.2rem;
-	border-bottom: 1px solid var(--nc-border);
-	flex-shrink: 0;
-}
-.plugin-drawer-head h2 { font-size: 1rem; font-weight: 700; }
-.plugin-drawer-head button {
-	background: none; border: none; cursor: pointer;
-	font-size: 1.4rem; color: var(--nc-text-dim); line-height: 1; padding: 0;
-}
-.plugin-drawer-head button:hover { color: var(--nc-text); }
-.plugin-drawer-body { flex: 1; overflow-y: auto; padding: 1.25rem 1.4rem; }
+/* ── Settings drawer — uses me-drawer from categories.css ── */

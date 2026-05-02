@@ -4,7 +4,6 @@
 {block name="meta_desc"}{$product.seo_description|escape|default:$product.description|strip_tags|truncate:200|escape}{/block}
 
 {block name="content"}
-{include file="_blocks.html" blocks=$product_blocks_above}
 <div class="product-detail">
 
 	{* ── Gallery ── *}
@@ -197,8 +196,6 @@
 	{/if}
 </div>
 {/if}
-
-{include file="_blocks.html" blocks=$product_blocks_below}
 
 {* ── Related Products ── *}
 {if $related_products}

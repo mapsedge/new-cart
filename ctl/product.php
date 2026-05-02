@@ -62,33 +62,24 @@ $related_products = DB::rows(
 	[$product['id']]
 );
 
-// Load blocks from the Product system page (global blocks above/below product view)
+// Load blocks from the Product system page (rendered below the product view).
 require_once DIR_LIB . 'page_block_helper.php';
-$_prod_sys = DB::row("SELECT id FROM `{$p}pages` WHERE slug='product' AND page_type='product' LIMIT 1");
-$product_blocks_above = [];
-$product_blocks_below = [];
+$_prod_sys   = DB::row("SELECT id FROM `{$p}pages` WHERE slug='product' AND page_type='product' LIMIT 1");
+$below_blocks = [];
 if ($_prod_sys) {
-	$_all_pblocks = hydrate_page_blocks((int)$_prod_sys['id'], $p, $smarty);
-	$pv_pos = PHP_INT_MAX;
-	foreach ($_all_pblocks as $i => $b) {
-		if ($b['block_type'] === 'product_view') { $pv_pos = $i; break; }
-	}
-	foreach ($_all_pblocks as $i => $b) {
-		if ($b['block_type'] === 'product_view') continue;
-		if ($i < $pv_pos) $product_blocks_above[] = $b;
-		else              $product_blocks_below[] = $b;
+	foreach (hydrate_page_blocks((int)$_prod_sys['id'], $p, $smarty) as $_b) {
+		if ($_b['block_type'] !== 'product_view') {
+			$below_blocks[] = $_b;
+		}
 	}
 }
 
-catalog_sidebar($smarty, $product['id']);
-
-$smarty->assign('product',               $product);
-$smarty->assign('images',                $images);
-$smarty->assign('product_options',       $product_options);
-$smarty->assign('related_products',      $related_products);
-$smarty->assign('rel_thumb_size',        $rel_thumb_size);
-$smarty->assign('img_product_width',     $img_product_width);
-$smarty->assign('product_blocks_above',  $product_blocks_above);
-$smarty->assign('product_blocks_below',  $product_blocks_below);
-$smarty->assign('page_type',             'product');
+$smarty->assign('product',        $product);
+$smarty->assign('images',         $images);
+$smarty->assign('product_options', $product_options);
+$smarty->assign('related_products', $related_products);
+$smarty->assign('rel_thumb_size',  $rel_thumb_size);
+$smarty->assign('img_product_width', $img_product_width);
+$smarty->assign('below_blocks',   $below_blocks);
+$smarty->assign('page_type',      'product');
 $smarty->display('product.html');

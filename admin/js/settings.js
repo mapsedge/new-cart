@@ -284,29 +284,6 @@
 		setVal('s_img_fm_size',       s.img_fm_size       || '50');
 		setVal('s_img_fm_quality',    s.img_fm_quality    || '60');
 		setVal('s_deepai_key',        s.deepai_key        || '');
-		// Stripe
-		setVal('s_stripe_mode',                  s.stripe_mode                  || 'test');
-		setVal('s_stripe_test_publishable_key',  s.stripe_test_publishable_key  || '');
-		setVal('s_stripe_test_secret_key',       s.stripe_test_secret_key       || '');
-		setVal('s_stripe_test_webhook_secret',   s.stripe_test_webhook_secret   || '');
-		setVal('s_stripe_publishable_key',       s.stripe_publishable_key       || '');
-		setVal('s_stripe_secret_key',            s.stripe_secret_key            || '');
-		setVal('s_stripe_webhook_secret',        s.stripe_webhook_secret        || '');
-		// GoShippo
-		setVal('s_shippo_api_key',              s.shippo_api_key              || '');
-		setVal('s_shippo_from_name',            s.shippo_from_name            || '');
-		setVal('s_shippo_from_street1',         s.shippo_from_street1         || '');
-		setVal('s_shippo_from_city',            s.shippo_from_city            || '');
-		setVal('s_shippo_from_state',           s.shippo_from_state           || '');
-		setVal('s_shippo_from_zip',             s.shippo_from_zip             || '');
-		setVal('s_shippo_from_country',         s.shippo_from_country         || 'US');
-		setVal('s_shippo_parcel_length',        s.shippo_parcel_length        || '10');
-		setVal('s_shippo_parcel_width',         s.shippo_parcel_width         || '8');
-		setVal('s_shippo_parcel_height',        s.shippo_parcel_height        || '4');
-		setVal('s_shippo_parcel_distance_unit', s.shippo_parcel_distance_unit || 'in');
-		setVal('s_shippo_parcel_weight',        s.shippo_parcel_weight        || '2');
-		setVal('s_shippo_parcel_mass_unit',     s.shippo_parcel_mass_unit     || 'lb');
-
 		setVal('error-log', res.log_content || '');
 		renderUsers(res.users || []);
 	}
@@ -394,28 +371,6 @@
 			img_related_size:        val('s_img_related_size'),
 			related_max_items:       val('s_related_max_items'),
 			deepai_key:              val('s_deepai_key'),
-			// Stripe
-			stripe_mode:                 val('s_stripe_mode'),
-			stripe_test_publishable_key: val('s_stripe_test_publishable_key'),
-			stripe_test_secret_key:      val('s_stripe_test_secret_key'),
-			stripe_test_webhook_secret:  val('s_stripe_test_webhook_secret'),
-			stripe_publishable_key:      val('s_stripe_publishable_key'),
-			stripe_secret_key:           val('s_stripe_secret_key'),
-			stripe_webhook_secret:       val('s_stripe_webhook_secret'),
-			// GoShippo
-			shippo_api_key:              val('s_shippo_api_key'),
-			shippo_from_name:            val('s_shippo_from_name'),
-			shippo_from_street1:         val('s_shippo_from_street1'),
-			shippo_from_city:            val('s_shippo_from_city'),
-			shippo_from_state:           val('s_shippo_from_state'),
-			shippo_from_zip:             val('s_shippo_from_zip'),
-			shippo_from_country:         val('s_shippo_from_country'),
-			shippo_parcel_length:        val('s_shippo_parcel_length'),
-			shippo_parcel_width:         val('s_shippo_parcel_width'),
-			shippo_parcel_height:        val('s_shippo_parcel_height'),
-			shippo_parcel_distance_unit: val('s_shippo_parcel_distance_unit'),
-			shippo_parcel_weight:        val('s_shippo_parcel_weight'),
-			shippo_parcel_mass_unit:     val('s_shippo_parcel_mass_unit'),
 			robots_txt:                  document.getElementById('s_robots_txt')?.value ?? '',
 		}, {
 			logo:    document.getElementById('input-logo')?.files[0],

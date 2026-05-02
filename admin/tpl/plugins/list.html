@@ -51,14 +51,18 @@
 </table>
 
 {* ── Plugin settings drawer ── *}
-<div id="plugin-settings-overlay"></div>
-<div id="plugin-settings-drawer" class="plugin-drawer" role="dialog" aria-modal="true" aria-labelledby="plugin-settings-title">
-	<div class="plugin-drawer-head">
-		<h2 id="plugin-settings-title">Plugin Settings</h2>
-		<button id="plugin-settings-close" aria-label="Close">&times;</button>
-	</div>
-	<div class="plugin-drawer-body" id="plugin-settings-body"></div>
-</div>
+<div id="drawer-overlay"></div>
+<me-drawer id="plugin-drawer" role="dialog" aria-modal="true" aria-labelledby="plugin-drawer-title">
+	<drawer-head>
+		<h2 id="plugin-drawer-title">Plugin Settings</h2>
+		<button class="drawer-close" id="plugin-drawer-close" aria-label="Close">&times;</button>
+	</drawer-head>
+	<drawer-content id="plugin-drawer-content"></drawer-content>
+	<drawer-foot>
+		<button class="btn btn-secondary" id="plugin-drawer-cancel">Cancel</button>
+		<button class="btn btn-primary"   id="plugin-drawer-save">Save Settings</button>
+	</drawer-foot>
+</me-drawer>
 
 {/block}
 

@@ -119,6 +119,8 @@ class Hook {
 			'admin.plugin.uninstall',
 			'admin.plugin.enable',
 			'admin.plugin.disable',
+			'admin.plugin.settings.{code}.load',   // filter: return HTML for settings form (null = use default)
+			'admin.plugin.settings.{code}.save',   // action: fired after settings are saved to DB
 			// System
 			'system.error',
 			'system.email.send',

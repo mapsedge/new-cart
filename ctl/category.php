@@ -12,7 +12,12 @@ if (!$category) {
 }
 
 catalog_sidebar($smarty);
-$smarty->assign('current_category', $category);
+$smarty->assign('current_category',      $category);
+$smarty->assign('current_category_slug', $category['slug']);
+$smarty->assign('cat_subnav', DB::rows(
+	"SELECT id, name, slug FROM `{$p}categories` WHERE parent_id=? AND status=1 ORDER BY display_order ASC, name ASC",
+	[$category['id']]
+));
 
 $products = DB::rows(
 	"SELECT p.id, p.name, p.slug, p.price, p.list_price,

@@ -49,7 +49,7 @@ $smarty->registerClass('Smarty', 'Smarty');
 // Read live values from settings table; fall back to install-time constants
 $_nc_site_settings = [];
 try {
-	$_nc_site_rows = DB::rows("SELECT `key`, `value` FROM `" . DB_PREFIX . "settings` WHERE `key` IN ('site_name','site_currency','img_cart_size','smarty_debug')");
+	$_nc_site_rows = DB::rows("SELECT `key`, `value` FROM `" . DB_PREFIX . "settings` WHERE `key` IN ('site_name','site_currency','img_cart_size','smarty_debug','store_phone','store_logo_url')");
 	foreach ($_nc_site_rows as $_r) $_nc_site_settings[$_r['key']] = $_r['value'];
 } catch (Exception $e) {}
 
@@ -58,12 +58,30 @@ $smarty->debugging = !empty($_nc_site_settings['smarty_debug']);
 $smarty->assign('site_name',     $_nc_site_settings['site_name']     ?? SITE_NAME);
 $smarty->assign('site_currency', $_nc_site_settings['site_currency'] ?? SITE_CURRENCY);
 $smarty->assign('img_cart_size', max(40, (int)($_nc_site_settings['img_cart_size'] ?? 100)));
+$smarty->assign('store_phone',    $_nc_site_settings['store_phone']    ?? '');
+$smarty->assign('store_logo_url', $_nc_site_settings['store_logo_url'] ?? '');
 $smarty->assign('url_root',      URL_ROOT);
 $smarty->assign('url_admin',     URL_ADMIN);
 $smarty->assign('url_img',       URL_IMG);
 $smarty->assign('flash',         flash_get());
 $smarty->assign('is_logged_in',  is_logged_in());
 $smarty->assign('cart_count',    Cart::count());
+$smarty->assign('cart_subtotal', Cart::subtotal());
+
+// ── Global layout data ─────────────────────────────────────────────────────────
+try {
+	$_p = DB_PREFIX;
+	$smarty->assign('cat_nav', DB::rows(
+		"SELECT id, name, slug FROM `{$_p}categories` WHERE parent_id=0 AND status=1 ORDER BY display_order ASC, name ASC"
+	));
+
+	// Sidebar blocks — from the 'sidebar' system page
+	$_sidebar_page = DB::row("SELECT id FROM `{$_p}pages` WHERE slug='sidebar' AND page_type='sidebar' LIMIT 1");
+	if ($_sidebar_page) {
+		require_once DIR_LIB . 'page_block_helper.php';
+		$smarty->assign('sidebar_blocks', hydrate_page_blocks((int)$_sidebar_page['id'], $_p, $smarty));
+	}
+} catch (Exception $_e) {}
 
 // ── Route ──────────────────────────────────────────────────────────────────────
 // Detect SEO-friendly paths: category/slug, product/slug, cart, checkout, order-complete

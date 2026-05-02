@@ -83,103 +83,74 @@
 	</div>
 </header>
 
-{* ── Menu 1 — horizontal nav ────────────────────────────────────────────── *}
-{if isset($menu1) && $menu1}
-<nav id="menu1" aria-label="Main navigation">
-	<div class="menu1-inner">
-		{foreach $menu1 as $item}
-		{if $item.enabled}
-		<div class="menu1-item{if $item.submenu_id} has-dropdown{/if}">
-			<a href="{if $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}
-			         {elseif $item.item_type === 'category' && $item.category_slug}{$url_root}category/{$item.category_slug|escape}
-			         {else}{$item.url|default:'#'|escape}{/if}"
-			   {if $item.submenu_id}aria-haspopup="true" aria-expanded="false"{/if}>
-				{$item.label|escape}
-				{if $item.submenu_id}<span class="menu1-arrow" aria-hidden="true">&#9660;</span>{/if}
-			</a>
-			{if $item.submenu_id && isset($item.submenu_items)}
-			<div class="menu1-dropdown" role="menu">
-				{foreach $item.submenu_items as $sub}
-				{if $sub.enabled}
-				<a href="{if $sub.item_type === 'page' && $sub.page_slug}{$url_root}page/{$sub.page_slug|escape}
-				         {elseif $sub.item_type === 'category' && $sub.category_slug}{$url_root}category/{$sub.category_slug|escape}
-				         {else}{$sub.url|default:'#'|escape}{/if}"
-				   role="menuitem">{$sub.label|escape}</a>
-				{/if}
-				{/foreach}
-			</div>
-			{/if}
-		</div>
-		{/if}
+{* ── Top-level categories nav ───────────────────────────────────────────── *}
+{if isset($cat_nav) && $cat_nav}
+<nav id="menu-cats" aria-label="Shop by category">
+	<div class="menu-cats-inner">
+		{foreach $cat_nav as $cat}
+		<a href="{$url_root}category/{$cat.slug|escape}"
+		   class="menu-cat-item{if isset($current_category) && $current_category.slug === $cat.slug} active{/if}">
+			{$cat.name|escape}
+		</a>
+		{/foreach}
+	</div>
+</nav>
+{/if}
+
+{* ── Sub-categories nav (set by category/product controllers) ───────────── *}
+{if isset($cat_subnav) && $cat_subnav}
+<nav id="menu-subcats" aria-label="Sub-categories">
+	<div class="menu-subcats-inner">
+		{foreach $cat_subnav as $sub}
+		<a href="{$url_root}category/{$sub.slug|escape}" class="menu-subcat-item">{$sub.name|escape}</a>
 		{/foreach}
 	</div>
 </nav>
 {/if}
 
 {* ── Page body ───────────────────────────────────────────────────────────── *}
-{* #page-body is a 4-column grid: col 1 = sidebar/block-col-1, cols 2-4 = content.
-   On pages with blocks, the block grid spans all 4 columns and the sidebar nav is suppressed. *}
-<div id="page-body">
+<div id="page-body"{if !isset($sidebar_blocks) || !$sidebar_blocks} class="no-sidebar"{/if}>
 
-	{* Menu 2 — sidebar navigation (suppressed on block/cart pages that own col 1) *}
-	{if isset($menu2) && $menu2 && (!isset($blocks) || !$blocks) && (!isset($cart_blocks) || !$cart_blocks)}
-	<button id="sidebar-toggle" aria-expanded="false" aria-controls="sidebar-menu2">
-		{if isset($menu2_type) && $menu2_type === 'related_products'}&#128279; Related{else}&#9776; Browse{/if}
-	</button>
-	<nav id="sidebar-menu2" aria-label="{if isset($menu2_type) && $menu2_type === 'related_products'}Related products{else}Browse navigation{/if}">
-		<div class="sidebar-inner">
-			{if isset($menu2_type) && $menu2_type === 'related_products'}
-			<div class="related-menu-heading">Related Products</div>
-			{foreach $menu2 as $item}
-			<a href="{$url_root}product/{$item.slug|escape}" class="related-menu-item">
-				<div class="related-menu-thumb">
-					{if $item.thumbnail}<img src="{$item.thumbnail|escape}" alt="{$item.label|escape}" loading="lazy">{/if}
-				</div>
-				<div class="related-menu-info">
-					<div class="related-menu-name">{$item.label|escape}</div>
-					<div class="related-menu-price">{$site_currency}{$item.price|string_format:"%.2f"}</div>
-				</div>
-			</a>
-			{/foreach}
-			{else}
-			{foreach $menu2 as $item}
-			{if $item.enabled}
-			<a href="{if $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}
-			         {elseif $item.item_type === 'category' && $item.category_slug}{$url_root}category/{$item.category_slug|escape}
-			         {elseif $item.item_type === 'category_tree'}{$url_root}category/{$item.category_slug|escape}
-			         {else}{$item.url|default:'#'|escape}{/if}"
-			   class="sidebar-link">
-				{$item.label|escape}
-				{if $item.show_count && isset($item.product_count)}
-				<span class="sidebar-count">({$item.product_count})</span>
-				{/if}
-			</a>
-			{/if}
-			{/foreach}
-			{/if}
-		</div>
-	</nav>
+	{* Col1 — Sidebar (user content blocks) *}
+	{if isset($sidebar_blocks) && $sidebar_blocks}
+	<aside id="sidebar-col" aria-label="Sidebar">
+		{include file="_blocks.html" blocks=$sidebar_blocks}
+	</aside>
 	{/if}
 
-	{* Main content *}
-	<main id="main-content" role="main">
-		{block name="content"}{/block}
-	</main>
+	{* Col2 — Main content + optional below-content blocks *}
+	<div id="main-col">
+		<main id="main-content" role="main">
+			{block name="content"}{/block}
+		</main>
+		{if isset($below_blocks) && $below_blocks}
+		<div id="below-content">
+			{include file="_blocks.html" blocks=$below_blocks}
+		</div>
+		{/if}
+	</div>
 
 </div>
 
 {* ── Footer ─────────────────────────────────────────────────────────────── *}
 <footer id="site-footer">
-	<div class="footer-inner nc-grid">
-		{if isset($footer_blocks) && $footer_blocks}
-		{foreach $footer_blocks as $block}
-		<div class="nc-col-{$block.cols|default:1}">{$block.content}</div>
-		{/foreach}
-		{else}
-		<div class="nc-col-4">
-			<p style="color:var(--nc-text-dim);font-size:.85rem">&copy; {$smarty.now|date_format:'%Y'} {$site_name|escape}</p>
+	<div class="footer-inner">
+		<div class="footer-cols">
+			{if isset($menu1) && $menu1}
+			<div class="footer-links">
+				{foreach $menu1 as $item}
+				{if $item.enabled}
+				<a href="{if $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}
+				         {elseif $item.item_type === 'category' && $item.category_slug}{$url_root}category/{$item.category_slug|escape}
+				         {else}{$item.url|default:'#'|escape}{/if}">
+					{$item.label|escape}
+				</a>
+				{/if}
+				{/foreach}
+			</div>
+			{/if}
+			<div class="footer-copy">&copy; {$smarty.now|date_format:'%Y'} {$site_name|escape}</div>
 		</div>
-		{/if}
 	</div>
 </footer>
 
@@ -188,20 +159,15 @@
 	<button id="mobile-nav-close" aria-label="Close navigation">&times;</button>
 	<ul>
 		<li><a href="{$url_root}">Home</a></li>
-		{if isset($menu1) && $menu1}
-		{foreach $menu1 as $item}
-		{if $item.enabled}
-		<li><a href="{if $item.item_type === 'page' && $item.page_slug}{$url_root}page/{$item.page_slug|escape}
-		             {elseif $item.item_type === 'category' && $item.category_slug}{$url_root}category/{$item.category_slug|escape}
-		             {else}{$item.url|default:'#'|escape}{/if}">{$item.label|escape}</a></li>
-		{/if}
+		{if isset($cat_nav) && $cat_nav}
+		{foreach $cat_nav as $cat}
+		<li><a href="{$url_root}category/{$cat.slug|escape}">{$cat.name|escape}</a></li>
 		{/foreach}
 		{/if}
 		<li><a href="{$url_root}cart">Cart{if $cart_count > 0} ({$cart_count}){/if}</a></li>
 	</ul>
 </nav>
 <div id="mobile-nav-backdrop"></div>
-<div id="sidebar-backdrop"></div>
 
 {* ── Scripts ─────────────────────────────────────────────────────────────── *}
 <script src="/js/vendor/SimpleNotification/simpleNotification.min.js"></script>
@@ -215,7 +181,7 @@
 {literal}
 // ── Mini logo via IntersectionObserver ────────────────────────────────────
 (function() {
-	var logo    = document.getElementById('store-logo');
+	var logo     = document.getElementById('store-logo');
 	var miniLogo = document.getElementById('mini-logo');
 	if (!logo || !miniLogo) return;
 	var obs = new IntersectionObserver(function(entries) {
@@ -238,36 +204,6 @@
 	back.addEventListener('click', closeNav);
 	document.addEventListener('keydown', function(e) { if (e.key==='Escape') closeNav(); });
 }());
-
-// ── Sidebar toggle ────────────────────────────────────────────────────────
-(function() {
-	var tog  = document.getElementById('sidebar-toggle');
-	var sb   = document.getElementById('sidebar-menu2');
-	var back = document.getElementById('sidebar-backdrop');
-	if (!tog || !sb) return;
-	function openSb()  { sb.classList.add('open'); back.classList.add('show'); tog.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
-	function closeSb() { sb.classList.remove('open'); back.classList.remove('show'); tog.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
-	tog.addEventListener('click', openSb);
-	back.addEventListener('click', closeSb);
-	document.addEventListener('keydown', function(e) { if (e.key==='Escape') closeSb(); });
-}());
-
-// ── Menu 1 dropdowns ─────────────────────────────────────────────────────
-document.querySelectorAll('.menu1-item.has-dropdown > a').forEach(function(a) {
-	a.addEventListener('click', function(e) {
-		e.preventDefault();
-		var item = a.closest('.menu1-item');
-		var open = item.classList.contains('open');
-		document.querySelectorAll('.menu1-item.open').forEach(function(i) { i.classList.remove('open'); });
-		if (!open) item.classList.add('open');
-		a.setAttribute('aria-expanded', String(!open));
-	});
-});
-document.addEventListener('click', function(e) {
-	if (!e.target.closest('.menu1-item')) {
-		document.querySelectorAll('.menu1-item.open').forEach(function(i) { i.classList.remove('open'); });
-	}
-});
 {/literal}
 </script>
 <script>

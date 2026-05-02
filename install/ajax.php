@@ -597,6 +597,7 @@ if ($action === 'install') {
 			['cart',            'Cart',             'cart',           1],
 			['checkout',        'Checkout',         'checkout',       1],
 			['product',         'Product',          'product',        1],
+			['sidebar',         'Sidebar',          'sidebar',        1],
 		];
 		$sp = $pdo->prepare(
 			"INSERT IGNORE INTO `{$p}pages` (slug, title, page_type, status, display_order)

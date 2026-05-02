@@ -203,6 +203,94 @@ if ($action === 'remove') {
 	out(true, 'Plugin removed.');
 }
 
+// ── Load plugin settings form ──────────────────────────────────────────────────
+if ($action === 'load_plugin_settings') {
+	$code       = preg_replace('/[^a-z0-9_\-]/i', '', post('code'));
+	$plugin_dir = DIR_ROOT . 'plugins/' . $code;
+
+	if (!$code || !is_dir($plugin_dir)) out(false, 'Plugin not found or not enabled.');
+
+	$manifest = PluginLoader::readManifest($plugin_dir . '/plugin.xml');
+	if (!$manifest) out(false, 'Plugin manifest not found.');
+
+	// Hook: admin.plugin.settings.{code}.load — return HTML to override the default form.
+	$html = Hook::filter('admin.plugin.settings.' . $code . '.load', null);
+
+	if ($html === null) {
+		$settings_file = $plugin_dir . '/admin/settings.php';
+		if (file_exists($settings_file)) {
+			// Provide current values to the settings template
+			$settings = [];
+			if (!empty($manifest['settings'])) {
+				$pf   = DB_PREFIX;
+				$keys = $manifest['settings'];
+				$rows = DB::rows(
+					"SELECT `key`, `value` FROM `{$pf}settings`
+					 WHERE `key` IN (" . implode(',', array_fill(0, count($keys), '?')) . ")",
+					$keys
+				);
+				$settings = array_column($rows, 'value', 'key');
+			}
+			ob_start();
+			include $settings_file;
+			$html = ob_get_clean();
+		} elseif (!empty($manifest['settings'])) {
+			// Auto-generate a simple form from manifest-declared keys
+			$pf   = DB_PREFIX;
+			$keys = $manifest['settings'];
+			$rows = DB::rows(
+				"SELECT `key`, `value` FROM `{$pf}settings`
+				 WHERE `key` IN (" . implode(',', array_fill(0, count($keys), '?')) . ")",
+				$keys
+			);
+			$values = array_column($rows, 'value', 'key');
+			$html   = '';
+			foreach ($keys as $key) {
+				$val   = htmlspecialchars($values[$key] ?? '', ENT_QUOTES, 'UTF-8');
+				$label = htmlspecialchars(ucwords(str_replace(['_', '-'], ' ', $key)), ENT_QUOTES, 'UTF-8');
+				$safe  = htmlspecialchars($key, ENT_QUOTES, 'UTF-8');
+				$html .= '<div class="df">';
+				$html .= '<label for="ps_' . $safe . '">' . $label . '</label>';
+				$html .= '<input type="text" id="ps_' . $safe . '" name="' . $safe . '" value="' . $val . '" maxlength="1000">';
+				$html .= '</div>';
+			}
+		} else {
+			$html = '<p style="color:var(--nc-text-dim)">This plugin has no configurable settings.</p>';
+		}
+	}
+
+	out(true, '', ['html' => $html]);
+}
+
+// ── Save plugin settings ───────────────────────────────────────────────────────
+if ($action === 'save_plugin_settings') {
+	$code       = preg_replace('/[^a-z0-9_\-]/i', '', post('code'));
+	$plugin_dir = DIR_ROOT . 'plugins/' . $code;
+
+	if (!$code || !is_dir($plugin_dir)) out(false, 'Plugin not found or not enabled.');
+
+	$manifest = PluginLoader::readManifest($plugin_dir . '/plugin.xml');
+	if (!$manifest) out(false, 'Plugin manifest not found.');
+
+	$allowed = $manifest['settings'];
+	if (empty($allowed)) out(false, 'This plugin has no configurable settings.');
+
+	$pf = DB_PREFIX;
+	foreach ($allowed as $key) {
+		DB::exec(
+			"INSERT INTO `{$pf}settings` (`key`, `value`) VALUES (?, ?)
+			 ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)",
+			[$key, trim((string)post($key))]
+		);
+	}
+
+	// Hook: admin.plugin.settings.{code}.save — receives ['code'=>..., 'keys'=>[...]]
+	$data = ['code' => $code, 'keys' => $allowed];
+	Hook::fire('admin.plugin.settings.' . $code . '.save', $data);
+
+	out(true, 'Settings saved.');
+}
+
 out(false, 'Unknown action.');
 
 // ── Helper: recursive directory removal ───────────────────────────────────────

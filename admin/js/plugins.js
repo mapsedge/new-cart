@@ -40,7 +40,7 @@
 	function buildRow(p) {
 		const tr = document.createElement('tr');
 		tr.dataset.code = p.code;
-		const settingsBtn = (p.has_admin && p.enabled)
+		const settingsBtn = ((p.has_settings || p.has_admin) && p.enabled)
 			? '<button class="btn btn-secondary btn-sm plugin-settings-btn" ' +
 			  'data-code="' + esc(p.code) + '" data-name="' + esc(p.name) + '" ' +
 			  'aria-label="Settings for ' + esc(p.name) + '">&#9881; Settings</button>'
@@ -88,60 +88,58 @@
 	});
 
 	// ── Settings drawer ───────────────────────────────────────────────────────
-	const settingsDrawer  = document.getElementById('plugin-settings-drawer');
-	const settingsTitle   = document.getElementById('plugin-settings-title');
-	const settingsBody    = document.getElementById('plugin-settings-body');
-	const settingsOverlay = document.getElementById('plugin-settings-overlay');
+	const drawer        = document.getElementById('plugin-drawer');
+	const drawerOverlay = document.getElementById('drawer-overlay');
+	const drawerTitle   = document.getElementById('plugin-drawer-title');
+	const drawerContent = document.getElementById('plugin-drawer-content');
 
-	function openSettingsDrawer() {
-		settingsDrawer.classList.add('open');
-		settingsOverlay.style.display = 'block';
+	let currentPluginCode = null;
+
+	function openDrawer(name) {
+		drawerTitle.textContent = name + ' — Settings';
+		drawer.classList.add('open');
+		drawerOverlay.classList.add('show');
 	}
-	function closeSettingsDrawer() {
-		settingsDrawer.classList.remove('open');
-		settingsOverlay.style.display = 'none';
-		settingsBody.innerHTML = '';
+	function closeDrawer() {
+		drawer.classList.remove('open');
+		drawerOverlay.classList.remove('show');
+		drawerContent.innerHTML = '';
+		currentPluginCode = null;
 	}
 
-	document.getElementById('plugin-settings-close')?.addEventListener('click', closeSettingsDrawer);
-	settingsOverlay?.addEventListener('click', closeSettingsDrawer);
+	document.getElementById('plugin-drawer-close').addEventListener('click', closeDrawer);
+	document.getElementById('plugin-drawer-cancel').addEventListener('click', closeDrawer);
+	drawerOverlay.addEventListener('click', closeDrawer);
 
 	tbody.addEventListener('click', async function (e) {
 		const btn = e.target.closest('.plugin-settings-btn');
 		if (!btn) return;
 		const code = btn.dataset.code;
 		const name = btn.dataset.name;
-		settingsTitle.textContent = name + ' — Settings';
-		settingsBody.innerHTML = '<p style="color:var(--nc-text-dim);padding:.5rem 0">Loading…</p>';
-		openSettingsDrawer();
-
-		try {
-			const r    = await fetch(NC.adminUrl + '?route=' + encodeURIComponent(code), {
-				headers: { 'X-NC-Partial': '1' },
-				credentials: 'same-origin',
-			});
-			const html = await r.text();
-			const parser = new DOMParser();
-			const doc    = parser.parseFromString(html, 'text/html');
-			const content = doc.getElementById('content');
-			settingsBody.innerHTML = content ? content.innerHTML : '<p>Could not load settings.</p>';
-
-			// Re-execute page scripts from the partial
-			const scriptsWrap = doc.getElementById('page-scripts-wrap');
-			if (scriptsWrap) {
-				const loadedSrcs = new Set(
-					Array.from(document.querySelectorAll('script[src]')).map(s => s.src)
-				);
-				scriptsWrap.querySelectorAll('script').forEach(function (s) {
-					if (s.src && loadedSrcs.has(new URL(s.src, location.origin).href)) return;
-					const ns = document.createElement('script');
-					if (s.src) ns.src = s.src; else ns.textContent = s.textContent;
-					document.body.appendChild(ns);
-				});
-			}
-		} catch (err) {
-			settingsBody.innerHTML = '<p style="color:var(--nc-danger)">Failed to load settings.</p>';
+		currentPluginCode = code;
+		drawerContent.innerHTML = '<p style="color:var(--nc-text-dim);padding:.5rem 0">Loading…</p>';
+		openDrawer(name);
+		const res = await ajax({ action: 'load_plugin_settings', code });
+		if (!res.ok) {
+			drawerContent.innerHTML = '<p style="color:var(--nc-danger)">' + esc(res.message) + '</p>';
+			return;
 		}
+		drawerContent.innerHTML = res.html || '<p style="color:var(--nc-text-dim)">No settings available.</p>';
+	});
+
+	debounceBtn(document.getElementById('plugin-drawer-save'), async function () {
+		if (!currentPluginCode) return;
+		const fd = new FormData();
+		fd.append('action', 'save_plugin_settings');
+		fd.append('code', currentPluginCode);
+		drawerContent.querySelectorAll('input, select, textarea').forEach(function (el) {
+			if (el.name) fd.append(el.name, el.value);
+		});
+		const r   = await fetch(AJAX, { method: 'POST', body: fd });
+		const res = await r.json();
+		if (!res.ok) { notifyErr(res.message); return; }
+		notifyOk(res.message);
+		closeDrawer();
 	});
 
 	// ── Upload ────────────────────────────────────────────────────────────────

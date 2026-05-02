@@ -10,6 +10,10 @@
         <hook>catalog.order.payment_complete</hook>
     </hooks>
     <settings>
+        <key>stripe_mode</key>
+        <key>stripe_test_publishable_key</key>
+        <key>stripe_test_secret_key</key>
+        <key>stripe_test_webhook_secret</key>
         <key>stripe_publishable_key</key>
         <key>stripe_secret_key</key>
         <key>stripe_webhook_secret</key>

@@ -1,4 +1,4 @@
-{if $blocks}
+{if $blocks || (isset($inject_cell_html) && $inject_cell_html)}
 <div class="page-blocks-grid">
 {foreach $blocks as $block}
 	<div class="page-block-cell" style="grid-column:{$block.grid_col_start}/span {$block.grid_col_span};grid-row:{$block.grid_row}{if $block.grid_row_span > 1}/span {$block.grid_row_span}{/if};">
@@ -198,5 +198,10 @@
 	{/if}
 	</div>{* /page-block-cell *}
 {/foreach}
+{if isset($inject_cell_html) && $inject_cell_html && isset($inject_cell_grid)}
+<div class="page-block-cell" style="grid-column:{$inject_cell_grid.grid_col_start}/span {$inject_cell_grid.grid_col_span};grid-row:{$inject_cell_grid.grid_row}{if $inject_cell_grid.grid_row_span > 1}/span {$inject_cell_grid.grid_row_span}{/if};">
+	{$inject_cell_html}
+</div>
+{/if}
 </div>{* /page-blocks-grid *}
 {/if}

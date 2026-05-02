@@ -65,16 +65,6 @@ if ($action === 'save_all') {
 		'img_related_size', 'related_max_items',
 		// Options — AI
 		'deepai_key',
-		// Stripe
-		'stripe_mode',
-		'stripe_test_publishable_key', 'stripe_test_secret_key', 'stripe_test_webhook_secret',
-		'stripe_publishable_key', 'stripe_secret_key', 'stripe_webhook_secret',
-		// GoShippo
-		'shippo_api_key',
-		'shippo_from_name', 'shippo_from_street1', 'shippo_from_city',
-		'shippo_from_state', 'shippo_from_zip', 'shippo_from_country',
-		'shippo_parcel_length', 'shippo_parcel_width', 'shippo_parcel_height',
-		'shippo_parcel_distance_unit', 'shippo_parcel_weight', 'shippo_parcel_mass_unit',
 	];
 
 	foreach ($all_fields as $key) {
