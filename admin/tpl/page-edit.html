@@ -56,10 +56,25 @@
 	<button class="pe-pal-btn" draggable="true" data-type="sitemap">&#128506; Sitemap</button>
 </div>
 
-{* ── 4-column canvas ── *}
-<div id="pe-canvas" role="list" aria-label="Page blocks">
-	<div id="pe-canvas-empty" class="pe-canvas-empty">
-		Click a block type above to add it to the page
+{* ── 2-column canvas ── *}
+<div id="pe-canvas">
+	<div class="pe-col pe-col-sidebar" id="pe-col-1">
+		<div class="pe-col-head">
+			<span>Sidebar</span>
+			<span class="pe-col-hint">20–25% wide</span>
+		</div>
+		<div class="pe-col-body" id="pe-col-1-body" role="list" aria-label="Sidebar blocks">
+			<div class="pe-col-empty">Drag blocks here to place in the sidebar</div>
+		</div>
+	</div>
+	<div class="pe-col pe-col-main" id="pe-col-2">
+		<div class="pe-col-head">
+			<span>Main Content</span>
+			<span class="pe-col-hint">remainder width</span>
+		</div>
+		<div class="pe-col-body" id="pe-col-2-body" role="list" aria-label="Main content blocks">
+			<div class="pe-col-empty">Click a block type above, or drag here</div>
+		</div>
 	</div>
 </div>
 

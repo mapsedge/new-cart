@@ -18,10 +18,8 @@
 {/if}
 
 {if $blocks}
-<div class="page-blocks-grid">
 {foreach $blocks as $block}
-	<div class="page-block-cell{if $block.is_core} block-cell-core{/if}"
-	     style="grid-column:{$block.grid_col_start}/span {$block.grid_col_span};grid-row:{$block.grid_row}{if $block.grid_row_span > 1}/span {$block.grid_row_span}{/if};">
+<div class="page-block{if $block.is_core} block-core{/if}">
 
 	{if $block.block_type === 'checkout_form'}
 
@@ -196,9 +194,8 @@
 		{/if}
 	{/if}
 
-	</div>
+</div>{* /page-block *}
 {/foreach}
-</div>
 {/if}
 {/block}
 

@@ -5,22 +5,12 @@
  */
 
 /**
- * Normalise raw DB row/col values into contiguous CSS grid coordinates.
+ * Normalise block col_start to 1 (sidebar) or 2 (main content).
  * Mutates the blocks array in place.
  */
 function normalize_block_grid(array &$blocks): void {
-	$row_values = array_unique(array_column($blocks, 'row'));
-	sort($row_values);
-	$row_map = array_flip($row_values);
-
 	foreach ($blocks as &$b) {
-		$cs = max(1, min(4, (int)($b['col_start'] ?? 1)));
-		$sp = max(1, min(4, (int)($b['col_span']  ?? 4)));
-		if ($cs + $sp > 5) $sp = 5 - $cs;
-		$b['grid_col_start'] = $cs;
-		$b['grid_col_span']  = $sp;
-		$b['grid_row_span']  = max(1, (int)($b['row_span'] ?? 1));
-		$b['grid_row']       = ($row_map[(int)($b['row'] ?? 0)] ?? 0) + 1;
+		$b['col_start'] = (int)($b['col_start'] ?? 2) >= 2 ? 2 : 1;
 	}
 	unset($b);
 }

@@ -229,7 +229,9 @@ body {
 	align-items: flex-start;
 }
 #sidebar-col {
-	width: 220px;
+	width: 22%;
+	min-width: 160px;
+	max-width: 280px;
 	flex-shrink: 0;
 }
 #main-col {
@@ -240,15 +242,9 @@ body {
 	margin-top: 1.5rem;
 }
 
-/* Sidebar blocks always stack single-column regardless of grid col settings */
-#sidebar-col .page-blocks-grid {
-	grid-template-columns: 1fr;
-	gap: 1rem;
-}
-#sidebar-col .page-block-cell {
-	grid-column: 1 !important;
-	grid-row: auto !important;
-}
+/* Sidebar blocks stack vertically */
+#sidebar-col .page-block { margin-bottom: 1rem; }
+#sidebar-col .page-block:last-child { margin-bottom: 0; }
 
 /* ── NC Grid — 4 col ── */
 .nc-grid {
@@ -602,9 +598,9 @@ body {
 	.product-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
-/* ≤900px — stack vertically; sidebar moves below main content */
-@media (max-width: 900px) {
-	#page-body  { flex-direction: column; }
+/* ≤800px — stack vertically; sidebar moves below main content */
+@media (max-width: 800px) {
+	#page-body   { flex-direction: column; }
 	#sidebar-col { width: 100%; order: 2; }
 	#main-col    { order: 1; }
 }
@@ -621,9 +617,7 @@ body {
 	.checkout-layout { grid-template-columns: 1fr; }
 	.product-detail  { grid-template-columns: 1fr; }
 
-	/* Collapse page-blocks-grid to single column */
-	.page-blocks-grid { grid-template-columns: 1fr; gap: 1rem; }
-	.page-block-cell  { grid-column: 1 !important; grid-row: auto !important; }
+	/* nothing to collapse — blocks already stack */
 }
 
 /* ≤480px */
@@ -639,22 +633,15 @@ body {
 
 
 /* ════════════════════════════════════════════════════════════════════════════
-   PAGE BLOCK GRID
+   PAGE BLOCKS
    ════════════════════════════════════════════════════════════════════════════ */
 
-.page-blocks-grid {
-	display: grid;
-	grid-template-columns: 220px 1fr 1fr 1fr;
-	grid-auto-rows: minmax(0, auto);
-	gap: 1.5rem;
-	align-items: start;
-}
-.page-block-cell {
+.page-block {
 	min-width: 0;
-	grid-column-end: span 1;
 	container-type: inline-size;
 	container-name: block-cell;
 }
+.page-block + .page-block { margin-top: 1.5rem; }
 
 .product-tabs           { margin-top: 1rem; }
 .cart-product-description { margin-top: 1rem; }

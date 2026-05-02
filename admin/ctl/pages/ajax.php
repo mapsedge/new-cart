@@ -132,11 +132,11 @@ if ($action === 'save_block') {
 	$type     = trim(post('block_type'));
 	$settings = post('settings', '{}');
 	$enabled  = (int)post('enabled', 1);
-	$cols      = max(1, min(4, (int)post('cols', 4)));
-	$col_start = max(1, min(4, (int)post('col_start', 1)));
-	$col_span  = max(1, min(4, (int)post('col_span',  $cols)));
+	$col_start = (int)post('col_start', 2) >= 2 ? 2 : 1;
+	$col_span  = 1;
+	$cols      = 1;
 	$row       = max(0, (int)post('row', 0));
-	$row_span  = max(1, min(20, (int)post('row_span', 1)));
+	$row_span  = 1;
 
 	// Validate settings JSON — always return object, never array
 	$decoded = json_decode($settings, true);
