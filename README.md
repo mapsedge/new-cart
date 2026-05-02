@@ -77,6 +77,10 @@ INSERT IGNORE INTO nc_page_blocks
     (page_id, block_type, settings, display_order, enabled, cols, col_start, col_span, `row`, row_span)
     SELECT id, 'product_view', '{"is_core":true}', 1, 1, 4, 1, 4, 0, 1
     FROM nc_pages WHERE slug='product';
+
+-- Sidebar system page (2-column block layout rebuild)
+INSERT IGNORE INTO nc_pages (slug, title, page_type, status, display_order)
+    VALUES ('sidebar', 'Sidebar', 'sidebar', 1, 99);
 ```
 
 ## Requirements
