@@ -677,7 +677,10 @@
 						if (s.src && loadedSrcs.has(new URL(s.src, location.origin).href)) return;
 						const ns = document.createElement('script');
 						if (s.src) { ns.src = s.src; } else { ns.textContent = s.textContent; }
-						scriptsWrap.appendChild(ns);
+						// Vendor scripts persist in body (deduped by loadedSrcs); page scripts
+						// live in scriptsWrap so they are removed and re-execute on return visits.
+						const isVendor = s.src && new URL(s.src, location.origin).pathname.includes('/vendor/');
+						(isVendor ? document.body : scriptsWrap).appendChild(ns);
 					});
 				}
 				// Update document title
