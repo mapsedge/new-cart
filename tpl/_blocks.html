@@ -70,7 +70,7 @@
 
 {elseif in_array($block.block_type, ['featured_products','best_sellers','new_arrivals','best_sellers_category'])}
 	{if isset($block.products) && $block.products}
-	<div class="block-products">
+	<div class="block-products" style="--second-level-size:{$second_level_size|default:200}px">
 		{if $block.heading}<h2 class="block-heading">{$block.heading|escape}</h2>{/if}
 		<div class="product-grid">
 			{foreach $block.products as $prod}

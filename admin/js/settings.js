@@ -69,25 +69,16 @@
 		else   { el.removeAttribute('checked'); el.checked = false; }
 	}
 
-	// ── Tab error indicator ───────────────────────────────────────────────────
+	// ── Tabs ──────────────────────────────────────────────────────────────────
+	const settingsTabs = NcTabs.init(document.querySelector('[data-nc-tabs]'));
+
 	function tabError(tabName, on) {
-		const btn = document.querySelector('.settings-tab[data-tab="' + tabName + '"]');
-		if (btn) btn.classList.toggle('has-error', on);
+		if (settingsTabs) settingsTabs.setError('tab-' + tabName, on);
 	}
 
 	function clearTabErrors() {
-		document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('has-error'));
+		if (settingsTabs) settingsTabs.clearErrors();
 	}
-
-	// ── Tabs ──────────────────────────────────────────────────────────────────
-	document.querySelectorAll('.settings-tab').forEach(function (btn) {
-		btn.addEventListener('click', function () {
-			document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-			document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-			this.classList.add('active');
-			document.getElementById('tab-' + this.dataset.tab).classList.add('active');
-		});
-	});
 
 	// ── Options sub-tabs ──────────────────────────────────────────────────────
 	document.querySelectorAll('.sub-tab').forEach(function (btn) {
@@ -243,6 +234,8 @@
 		setVal('s_img_product_quality',     s.img_product_quality     || '80');
 		setVal('s_img_cart_size',           s.img_cart_size           || '100');
 		setVal('s_img_related_size',        s.img_related_size        || '200');
+		setVal('s_img_second_level_size',   s.img_second_level_size   || '200');
+		setVal('s_img_sidebar_size',        s.img_sidebar_size        || '120');
 		setVal('s_related_max_items',       s.related_max_items       || '0');
 		// Load robots.txt content separately
 		const robotsEl = document.getElementById('s_robots_txt');
@@ -310,9 +303,7 @@
 		if (errors.length) {
 			statusEl.textContent = '';
 			errors.forEach(notifyErr);
-			// Switch to first tab with error
-			const errTab = document.querySelector('.settings-tab.has-error');
-			if (errTab) errTab.click();
+			if (settingsTabs) settingsTabs.activateFirstError();
 			return;
 		}
 
@@ -335,6 +326,8 @@
 			img_product_quality:     val('s_img_product_quality'),
 			img_cart_size:           val('s_img_cart_size'),
 			img_related_size:        val('s_img_related_size'),
+			img_second_level_size:   val('s_img_second_level_size'),
+			img_sidebar_size:        val('s_img_sidebar_size'),
 			related_max_items:       val('s_related_max_items'),
 			site_currency:           val('s_site_currency'),
 			seo_title_default:       val('s_seo_title_default'),
@@ -369,6 +362,8 @@
 			img_fm_size:             val('s_img_fm_size'),
 			img_fm_quality:          val('s_img_fm_quality'),
 			img_related_size:        val('s_img_related_size'),
+			img_second_level_size:   val('s_img_second_level_size'),
+			img_sidebar_size:        val('s_img_sidebar_size'),
 			related_max_items:       val('s_related_max_items'),
 			deepai_key:              val('s_deepai_key'),
 			robots_txt:                  document.getElementById('s_robots_txt')?.value ?? '',
@@ -603,15 +598,10 @@
 		if (!panel || !panel.classList.contains('sub-panel')) return;
 
 		// Activate the Options main tab first
-		document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-		document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-		const optTab   = document.querySelector('.settings-tab[data-tab="options"]');
-		const optPanel = document.getElementById('tab-options');
-		if (optTab)   optTab.classList.add('active');
-		if (optPanel) optPanel.classList.add('active');
+		if (settingsTabs) settingsTabs.activateById('tab-options');
 
 		// Activate the sub-tab
-		const parent = panel.closest('.tab-panel');
+		const parent = panel.closest('#tab-options');
 		if (parent) {
 			parent.querySelectorAll('.sub-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
 			parent.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));

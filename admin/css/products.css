@@ -122,7 +122,8 @@
 /* ── Delete fade ── */
 .delete-fade { opacity: 0; transition: opacity .3s; pointer-events: none; display: block; height: 24px; }
 .delete-fade.show { opacity: 1; pointer-events: auto; }
-.row-removing { opacity: 0 !important; transition: opacity .3s ease !important; }
+.row-deleting          { outline: 1px solid var(--nc-danger); }
+.row-deleting-fade     { opacity: 0; transition: opacity .3s ease; }
 
 /* ── Drawer (wider for products) ── */
 me-drawer, edge-drawer {

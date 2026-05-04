@@ -22,7 +22,10 @@ function goshippo_setting(string $key): string {
 }
 
 function goshippo_api(string $endpoint, array $body = [], string $method = 'POST'): ?array {
-	$key = goshippo_setting('shippo_api_key');
+	$mode = goshippo_setting('shippo_mode') ?: 'test';
+	$key  = $mode === 'live'
+		? goshippo_setting('shippo_live_api_key')
+		: goshippo_setting('shippo_test_api_key');
 	if (!$key) return null;
 
 	$ch = curl_init('https://api.goshippo.com/' . $endpoint);
@@ -43,7 +46,10 @@ function goshippo_api(string $endpoint, array $body = [], string $method = 'POST
 }
 
 function goshippo_get_rates(array $address, array $items): array {
-	$key = goshippo_setting('shippo_api_key');
+	$mode = goshippo_setting('shippo_mode') ?: 'test';
+	$key  = $mode === 'live'
+		? goshippo_setting('shippo_live_api_key')
+		: goshippo_setting('shippo_test_api_key');
 	if (!$key || empty($address['zip'])) return [];
 
 	$shipment = goshippo_api('shipments', [
@@ -79,7 +85,7 @@ function goshippo_get_rates(array $address, array $items): array {
 
 	$rates = [];
 	foreach ($shipment['rates'] as $r) {
-		if ($r['object_state'] !== 'VALID') continue;
+		if (($r['object_state'] ?? 'VALID') !== 'VALID') continue;
 		$rates[] = [
 			'id'           => 'shippo:' . $r['object_id'],
 			'carrier'      => $r['provider'],

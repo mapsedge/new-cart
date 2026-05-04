@@ -614,13 +614,21 @@
 
 	// ── Delete single ─────────────────────────────────────────────────────────
 	tbody.addEventListener('dip-confirm', async function (e) {
-		const id  = e.detail.id;
+		const id  = e.detail['data-id'];
 		const res = await post({ action: 'delete', id });
 		if (!res.ok) { notifyErr(res.message); return; }
 		const tr = tbody.querySelector('tr[data-id="' + id + '"]');
-		if (tr) { tr.classList.add('row-removing'); setTimeout(function () { tr.remove(); updateBulkBtn(); }, 300); }
-		if (!tbody.querySelector('tr[data-id]')) emptyRow.style.display = '';
-		notifyOk(res.message);
+		if (tr) {
+			tr.classList.add('row-deleting');
+			setTimeout(function () {
+				tr.classList.add('row-deleting-fade');
+				setTimeout(function () {
+					tr.remove();
+					updateBulkBtn();
+					if (!tbody.querySelector('tr[data-id]')) emptyRow.style.display = '';
+				}, 300);
+			}, 200);
+		}
 	});
 
 	// ── Bulk delete ───────────────────────────────────────────────────────────
@@ -643,11 +651,16 @@
 		if (!res.ok) { notifyErr(res.message); return; }
 		ids.forEach(function (id) {
 			const tr = tbody.querySelector('tr[data-id="' + id + '"]');
-			if (tr) { tr.classList.add('row-removing'); setTimeout(() => tr.remove(), 300); }
+			if (tr) {
+				tr.classList.add('row-deleting');
+				setTimeout(function () {
+					tr.classList.add('row-deleting-fade');
+					setTimeout(function () { tr.remove(); }, 300);
+				}, 200);
+			}
 		});
-		setTimeout(function () { if (!tbody.querySelector('tr[data-id]')) emptyRow.style.display = ''; updateBulkBtn(); }, 350);
+		setTimeout(function () { if (!tbody.querySelector('tr[data-id]')) emptyRow.style.display = ''; updateBulkBtn(); }, 550);
 		chkAll.checked = false;
-		notifyOk(res.message);
 	});
 
 	// ── Drag-drop reorder — delegated ─────────────────────────────────────────

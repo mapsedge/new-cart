@@ -203,7 +203,7 @@
 <script>
 var STRIPE_PUBLISHABLE_KEY = '{$stripe_key|escape}';
 var CART_CURRENCY          = '{$site_currency_code|default:"usd"|escape}';
-var CART_SUBTOTAL          = {$subtotal_raw|floatval};
+var CART_SUBTOTAL          = {$subtotal_raw|string_format:"%.2f"};
 var CART_AMOUNT_CENTS      = 0;
 var ORDER_ID               = 0;
 var THANKYOU_URL           = '{$url_root}order-complete';

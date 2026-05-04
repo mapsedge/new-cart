@@ -43,9 +43,10 @@ unset($po);
 
 // Related products + image display settings
 $_rel_settings    = [];
-$_rel_rows        = DB::rows("SELECT `key`, `value` FROM `{$p}settings` WHERE `key` IN ('img_related_size','related_max_items','img_product_width')");
+$_rel_rows        = DB::rows("SELECT `key`, `value` FROM `{$p}settings` WHERE `key` IN ('img_related_size','related_max_items','img_product_width','img_sidebar_size')");
 foreach ($_rel_rows as $_r) $_rel_settings[$_r['key']] = $_r['value'];
 $rel_thumb_size    = max(80,  (int)($_rel_settings['img_related_size']  ?? 200));
+$sidebar_thumb_size = max(40, (int)($_rel_settings['img_sidebar_size']  ?? 120));
 $rel_max_items     = max(0,   (int)($_rel_settings['related_max_items'] ?? 0));
 $img_product_width = max(200, (int)($_rel_settings['img_product_width'] ?? 600));
 
@@ -74,12 +75,13 @@ if ($_prod_sys) {
 	}
 }
 
-$smarty->assign('product',        $product);
-$smarty->assign('images',         $images);
-$smarty->assign('product_options', $product_options);
-$smarty->assign('related_products', $related_products);
-$smarty->assign('rel_thumb_size',  $rel_thumb_size);
+$smarty->assign('product',          $product);
+$smarty->assign('images',           $images);
+$smarty->assign('product_options',  $product_options);
+$smarty->assign('related_products',  $related_products);
+$smarty->assign('rel_thumb_size',    $rel_thumb_size);
+$smarty->assign('sidebar_thumb_size', $sidebar_thumb_size);
 $smarty->assign('img_product_width', $img_product_width);
-$smarty->assign('below_blocks',   $below_blocks);
-$smarty->assign('page_type',      'product');
+$smarty->assign('below_blocks',     $below_blocks);
+$smarty->assign('page_type',        'product');
 $smarty->display('product.html');

@@ -5,6 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>{block name="title"}{$page_title|default:'Admin'} — {$site_name|escape}{/block}</title>
 	<link rel="stylesheet" href="{$url_admin_real}css/vars.css">
+	<link rel="stylesheet" href="{$url_admin_real}css/nc-tabs.css">
 	<link rel="stylesheet" href="{$url_admin_real}css/categories.css">
 	<link rel="stylesheet" href="{$url_root}js/vendor/SimpleNotification/simpleNotification.min.css">
 	<link rel="stylesheet" href="{$url_root}js/vendor/trumbowyg/trumbowyg.css">
@@ -676,7 +677,7 @@
 						if (s.src && loadedSrcs.has(new URL(s.src, location.origin).href)) return;
 						const ns = document.createElement('script');
 						if (s.src) { ns.src = s.src; } else { ns.textContent = s.textContent; }
-						document.body.appendChild(ns);
+						scriptsWrap.appendChild(ns);
 					});
 				}
 				// Update document title
@@ -737,6 +738,7 @@
 
 {* ── Vendor JS (loaded before page scripts so helpers are available) ── *}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="{$url_admin_real}js/nc-tabs.js"></script>
 <script src="{$url_root}js/app.js"></script>
 <script src="{$url_root}js/vendor/debounce-button.js"></script>
 <script src="{$url_root}js/vendor/password-field.js"></script>

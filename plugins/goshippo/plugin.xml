@@ -10,7 +10,9 @@
         <hook>catalog.order.label_generate</hook>
     </hooks>
     <settings>
-        <key>shippo_api_key</key>
+        <key>shippo_mode</key>
+        <key>shippo_test_api_key</key>
+        <key>shippo_live_api_key</key>
         <key>shippo_from_name</key>
         <key>shippo_from_street1</key>
         <key>shippo_from_city</key>

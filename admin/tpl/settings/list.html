@@ -15,19 +15,20 @@
 </div>
 
 {* ── Tabs ── *}
-<div class="settings-tabs">
-	<button class="settings-tab active" data-tab="store">Store</button>
-	<button class="settings-tab" data-tab="local">Local</button>
-	<button class="settings-tab" data-tab="mail">Mail</button>
-	<button class="settings-tab" data-tab="server">Server</button>
-	<button class="settings-tab" data-tab="options">Options</button>
-	<button class="settings-tab" data-tab="seo">SEO</button>
-	<button class="settings-tab" data-tab="users">Users</button>
-	<button class="settings-tab" data-tab="errors">Error Log</button>
-</div>
+<div data-nc-tabs>
+<ul>
+	<li><a href="#tab-store">Store</a></li>
+	<li><a href="#tab-local">Local</a></li>
+	<li><a href="#tab-mail">Mail</a></li>
+	<li><a href="#tab-server">Server</a></li>
+	<li><a href="#tab-options">Options</a></li>
+	<li><a href="#tab-seo">SEO</a></li>
+	<li><a href="#tab-users">Users</a></li>
+	<li><a href="#tab-errors">Error Log</a></li>
+</ul>
 
 {* ── Store tab ── *}
-<div class="tab-panel active" id="tab-store">
+<div id="tab-store">
 	<div class="card-grid">
 
 		<div class="settings-card">
@@ -113,7 +114,7 @@
 </div>
 
 {* ── Local tab ── *}
-<div class="tab-panel" id="tab-local">
+<div id="tab-local">
 	<div class="card-grid">
 
 		<div class="settings-card">
@@ -167,7 +168,7 @@
 </div>
 
 {* ── Mail tab ── *}
-<div class="tab-panel" id="tab-mail">
+<div id="tab-mail">
 	<div class="card-grid">
 
 		<div class="settings-card">
@@ -209,7 +210,7 @@
 </div>
 
 {* ── Server tab ── *}
-<div class="tab-panel" id="tab-server">
+<div id="tab-server">
 	<div class="card-grid">
 
 		<div class="settings-card">
@@ -275,7 +276,7 @@
 </div>
 
 {* ── Options tab ── *}
-<div class="tab-panel" id="tab-options">
+<div id="tab-options">
 
 	<div class="sub-tabs" role="tablist" aria-label="Options sections">
 		<button class="sub-tab active" data-sub="images" role="tab" aria-selected="true"  aria-controls="sub-images">Images</button>
@@ -329,8 +330,16 @@
 					<label class="img-row-label">Related Products</label>
 					<input type="number" id="s_img_related_size" min="80" max="600" value="200" aria-label="Related products thumbnail size">
 					<span></span>
+
+					<label class="img-row-label">Second Level</label>
+					<input type="number" id="s_img_second_level_size" min="40" max="600" value="200" aria-label="Second level thumbnail size">
+					<span></span>
+
+					<label class="img-row-label">Sidebar Thumbnails</label>
+					<input type="number" id="s_img_sidebar_size" min="40" max="300" value="120" aria-label="Sidebar thumbnail size">
+					<span></span>
 				</div>
-				<p class="section-hint" style="margin-top:.75rem">Product Admin: shown in admin product list, proportionally scaled. File Manager: cropped square for icon view. Product Image: displayed on the catalog product page. Cart Thumbnail: product image in the cart. Related Products: thumbnail size used in the related products section.</p>
+				<p class="section-hint" style="margin-top:.75rem">Product Admin: shown in admin product list, proportionally scaled. File Manager: cropped square for icon view. Product Image: displayed on the catalog product page. Cart Thumbnail: product image in the cart. Related Products: thumbnail size used in the related products section. Second Level: image height for featured/best-seller product blocks on pages. Sidebar Thumbnails: thumbnail size used in the product page right column.</p>
 			</div>
 		</div>
 
@@ -386,7 +395,7 @@
 
 
 {* ── Users tab ── *}
-<div class="tab-panel" id="tab-seo">
+<div id="tab-seo">
 	<div class="card-grid">
 		<div class="settings-card" style="max-width:680px">
 			<div class="card-head">robots.txt</div>
@@ -407,7 +416,7 @@
 	</div>
 </div>
 
-<div class="tab-panel" id="tab-users">
+<div id="tab-users">
 	<div class="nc-toolbar">
 		<button class="btn btn-primary" id="btn-add-user">+ Add User</button>
 	</div>
@@ -432,7 +441,7 @@
 </div>
 
 {* ── Error log tab ── *}
-<div class="tab-panel" id="tab-errors">
+<div id="tab-errors">
 	<div class="settings-card full-width">
 		<div class="card-head">Error Log</div>
 		<div class="card-body">
@@ -444,6 +453,8 @@
 		</div>
 	</div>
 </div>
+
+</div>{* /data-nc-tabs *}
 
 {* ── Overlay ── *}
 <div id="drawer-overlay"></div>

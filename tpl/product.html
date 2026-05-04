@@ -77,7 +77,7 @@
 				</label>
 
 				{if $po.type == 'select'}
-					<select id="opt-{$po.id}" name="options[{$po.id}]"
+					<select id="opt-{$po.id}" name="options[{$po.id}]" class="option-dropdown"
 					        {if $po.required}required aria-required="true"{/if}
 					        data-po-id="{$po.id}">
 						<option value="">{if $po.placeholder}{$po.placeholder|escape}{else}— Select —{/if}</option>
@@ -186,7 +186,7 @@
 	</div>
 </div>
 
-{* ── Description tabs ── *}
+{* ── Description ── *}
 {if $product.description_long || $product.description}
 <div class="cart-product-description">
 	{if $product.description_long}
@@ -197,11 +197,13 @@
 </div>
 {/if}
 
-{* ── Related Products ── *}
+{/block}
+
+{block name="right_col"}
 {if $related_products}
-<div class="related-products-wrap">
-	<div class="block-related-products" style="--rel-thumb-size:{$rel_thumb_size}px">
-		<h2 class="related-products-heading">Related Products</h2>
+<aside id="right-col" aria-label="Related Products">
+	<div class="block-related-products" style="--rel-thumb-size:{$sidebar_thumb_size}px">
+		<h2 class="block-heading">Related Products</h2>
 		<div class="rel-grid">
 			{foreach $related_products as $prod}
 			<a class="rel-item" href="{$url_root}product/{$prod.slug|escape}" aria-label="{$prod.name|escape}">
@@ -226,9 +228,8 @@
 			{/foreach}
 		</div>
 	</div>
-</div>
+</aside>
 {/if}
-
 {/block}
 
 {block name="scripts"}

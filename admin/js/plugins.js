@@ -125,6 +125,9 @@
 			return;
 		}
 		drawerContent.innerHTML = res.html || '<p style="color:var(--nc-text-dim)">No settings available.</p>';
+		drawerContent.querySelectorAll('[data-nc-tabs]').forEach(function(el) {
+			NcTabs.init(el);
+		});
 	});
 
 	debounceBtn(document.getElementById('plugin-drawer-save'), async function () {

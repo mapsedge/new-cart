@@ -34,6 +34,10 @@ session_start();
 // ── DB ─────────────────────────────────────────────────────────────────────────
 DB::connect();
 
+// ── Plugins ────────────────────────────────────────────────────────────────────
+require DIR_LIB . 'plugin-loader.php';
+PluginLoader::boot();
+
 // ── Smarty ─────────────────────────────────────────────────────────────────────
 require DIR_LIB . 'vendor/smarty/smarty/libs/Smarty.class.php';
 
@@ -81,6 +85,10 @@ try {
 		require_once DIR_LIB . 'page_block_helper.php';
 		$smarty->assign('sidebar_blocks', hydrate_page_blocks((int)$_sidebar_page['id'], $_p, $smarty));
 	}
+
+	// Second-level thumbnail size (featured products blocks)
+	$_sl = DB::row("SELECT `value` FROM `{$_p}settings` WHERE `key`='img_second_level_size' LIMIT 1");
+	$smarty->assign('second_level_size', max(40, (int)(($_sl['value'] ?? null) ?: 200)));
 } catch (Exception $_e) {}
 
 // ── Route ──────────────────────────────────────────────────────────────────────

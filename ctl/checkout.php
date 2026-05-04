@@ -119,7 +119,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'shipping_rates'
 }
 
 // ── Render checkout page ──────────────────────────────────────────────────────
-require_once DIR_LIB . 'plugin-loader.php';
 $stripe_key = '';
 if (in_array('stripe', PluginLoader::loaded())) {
 	$mode       = DB::val("SELECT `value` FROM `{$p}settings` WHERE `key`='stripe_mode'") ?: 'test';
